@@ -1,7 +1,7 @@
 # fmttab
 
 [![Build Status](https://travis-ci.org/Arteev/fmttab.svg?branch=master)](https://travis-ci.org/Arteev/fmttab)
-[![Coverage](http://gocover.io/_badge/github.com/Arteev/fmttab)](http://gocover.io/github.com/Arteev/fmttab)
+[![Coverage Status](https://coveralls.io/repos/Arteev/fmttab/badge.svg?branch=master&service=github)](https://coveralls.io/github/Arteev/fmttab?branch=master)
 Description
 -----------
 
