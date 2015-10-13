@@ -1,9 +1,10 @@
 package fmttab
+
 import (
-	"testing"
-	"strings"
-	"strconv"
 	"bytes"
+	"strconv"
+	"strings"
+	"testing"
 )
 
 func TestCallAndOut(t *testing.T) {
@@ -11,8 +12,8 @@ func TestCallAndOut(t *testing.T) {
 	const val = 123
 	arr := []map[string]interface{}{
 		map[string]interface{}{
-			"ID" : val,
-			"NAME" : name,
+			"ID":   val,
+			"NAME": name,
 		},
 	}
 	l := len(arr)
@@ -26,14 +27,12 @@ func TestCallAndOut(t *testing.T) {
 		return true, r
 	})
 	tbl.AddColumn("ID", 10, ALIGN_LEFT).
-	AddColumn("NAME", 40, ALIGN_RIGHT)
-
+		AddColumn("NAME", 40, ALIGN_RIGHT)
 
 	sout := tbl.String()
-	if (cur != 1) {
+	if cur != 1 {
 		t.Error("Excepted call datagetter")
 	}
-
 
 	if strings.IndexAny(sout, name) == -1 {
 		t.Errorf("Excepted in output %q", name)
@@ -50,10 +49,10 @@ func TestTrim(t *testing.T) {
 		end string
 		max int
 	}]string{
-		{"testing", "...", 6} : "tes...",
-		{"testing", "...", 7} : "testing",
-		{"testing", "...", 2} : "..",
-		{"testing", ">", 5} : "test>",
+		{"testing", "...", 6,}: "tes...",
+		{"testing", "...", 7,}: "testing",
+		{"testing", "...", 2,}: "..",
+		{"testing", ">", 5}:   "test>",
 	}
 	for key, pair := range test {
 		r := TrimEnds(key.val, key.end, key.max)
@@ -74,21 +73,21 @@ func TestString(t *testing.T) {
 
 	var buf bytes.Buffer
 
-	if cntwrite,err:=tab.WriteTo(&buf);err!=nil {
+	if cntwrite, err := tab.WriteTo(&buf); err != nil {
 		t.Error(err)
 	} else {
-		if int64(len(res))!=cntwrite {
-			t.Errorf("Excepted count write:%d, got: %d",len(res),cntwrite)
+		if int64(len(res)) != cntwrite {
+			t.Errorf("Excepted count write:%d, got: %d", len(res), cntwrite)
 		}
 	}
 
 	var buf2 bytes.Buffer
-	tab2 := New("",BORDER_THIN,nil)
-	if cntwrite,err:=tab2.WriteTo(&buf2);err!=nil {
+	tab2 := New("", BORDER_THIN, nil)
+	if cntwrite, err := tab2.WriteTo(&buf2); err != nil {
 		t.Error(err)
 	} else {
-		if cntwrite!=0 {
-			t.Errorf("Excepted count write:-1, got: %d",cntwrite)
+		if cntwrite != 0 {
+			t.Errorf("Excepted count write:-1, got: %d", cntwrite)
 		}
 	}
 
