@@ -49,9 +49,15 @@ func TestTrim(t *testing.T) {
 		end string
 		max int
 	}]string{
-		{"testing", "...", 6,}: "tes...",
-		{"testing", "...", 7,}: "testing",
-		{"testing", "...", 2,}: "..",
+		{
+			"testing", "...", 6,
+		}: "tes...",
+		{
+			"testing", "...", 7,
+		}: "testing",
+		{
+			"testing", "...", 2,
+		}: "..",
 		{"testing", ">", 5}:   "test>",
 	}
 	for key, pair := range test {
