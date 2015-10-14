@@ -16,8 +16,38 @@ This package can be installed with the go get command:
 
 Documentation
 -------------
+Example 1:
 
-Example:
+```go
+    tab := fmttab.New("Environments",fmttab.BORDER_DOUBLE,nil)
+        tab.AddColumn("ENV",25,fmttab.ALIGN_LEFT).
+            AddColumn("VALUE",25,fmttab.ALIGN_LEFT)
+        for _,env:=range os.Environ() {
+            keyval := strings.Split(env,"=")
+            tab.AppendData(map[string]interface{} {
+                "ENV": keyval[0],
+                "VALUE" : keyval[1],
+            })
+        }
+        tab.WriteTo(os.Stdout)
+```
+
+Output:
+    ╔═════════════════════════╤═════════════════════════╗
+    ║ENV                      │VALUE                    ║
+    ╟─────────────────────────┼─────────────────────────╢
+    ║PAPERSIZE                │a4                       ║
+    ║UPSTART_SESSION          │unix:abstract            ║
+    ║GNOME_DESKTOP_SESSION_ID │this-is-deprecated       ║
+    ║GDMSESSION               │ubuntu                   ║
+    ║IM_CONFIG_PHASE          │1                        ║
+    ║COMPIZ_CONFIG_PROFILE    │ubuntu                   ║
+    ║LANG                     │ru_RU.UTF-8              ║
+    ╚═════════════════════════╧═════════════════════════╝
+```
+```
+
+Example 2:
 ```go
     package main
 
@@ -59,7 +89,7 @@ Example:
     }
 ```
 
-Result:
+Output:
 ```
 ╔══════════════════════════════╤══════════╤════════════════════╤══════╗
 ║Name                          │      Size│Time                │Dir   ║

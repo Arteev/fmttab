@@ -88,6 +88,7 @@ type Table struct {
 	cols    []*column
 	caption string
 	border  Border
+	data []map[string]interface{}
 	dataget DataGetter
 }
 
@@ -103,6 +104,7 @@ func TrimEnds(val,end string, max int) string {
 	}
 	return val[:(max-lend)] + end
 }
+
 func (c *column) GetMaskFormat() string {
 
 	if c.aling== ALIGN_LEFT {
@@ -118,6 +120,20 @@ func (t *Table) AddColumn(name string, width int, aling Align) *Table {
 		aling:aling,
 	})
 	return t
+}
+
+func (t *Table) AppendData(rec map[string]interface{}) *Table {
+	t.data = append(t.data,rec)
+	return t
+}
+
+func (t *Table) ClearData() *Table{
+	t.data=nil
+	return t
+}
+
+func (t *Table) CountData() int {
+	return len(t.data)
 }
 
 func (t *Table) writeHeader(w io.Writer) (int,error) {
@@ -240,48 +256,65 @@ func (t *Table) writeBottomBorder(w io.Writer) (int,error) {
 	return cntwrite,nil
 }
 
+func (t *Table) writeRecord(data map[string]interface{},w io.Writer) (int,error) {
+	var cntwrite int
+	cntCols := len(t.cols)
+	if n, err := w.Write([]byte(borders[t.border][bkVerticalBorder])); err != nil {
+		return -1,err
+	} else {
+		cntwrite += n
+	}
+	for num, c := range t.cols {
+		val, mok := data[c.name];
+		if !mok || val==nil {
+			val = ""
+		}
+		caption := fmt.Sprintf(c.GetMaskFormat(), val)
+		if n, err := w.Write([]byte(  TrimEnds(caption,trimend,c.width) )); err != nil {
+			return -1,err
+		} else {
+			cntwrite += n
+		}
+		var delim string
+		if num < cntCols - 1 {
+			delim = borders[t.border][bkVertical]
+		} else {
+			delim = borders[t.border][bkVerticalBorder] + ""
+		}
+		if n, err := w.Write([]byte(delim)); err != nil {
+			return -1,err
+		} else {
+			cntwrite += n
+		}
+	}
+	if n, err := w.Write([]byte("\n")); err != nil {
+		return -1,err
+	} else {
+		cntwrite += n
+	}
+	return cntwrite,nil
+}
 
 func (t *Table) writeData(w io.Writer) (int,error) {
 	var cntwrite int
 	if t.dataget != nil {
-		cntCols := len(t.cols)
 		for {
 			ok, data := t.dataget()
 			if !ok {
 				break
 			}
-			if n, err := w.Write([]byte(borders[t.border][bkVerticalBorder])); err != nil {
+			if n,err := t.writeRecord(data,w);err!=nil {
 				return -1,err
 			} else {
-				cntwrite += n
+				cntwrite+=n
 			}
-			for num, c := range t.cols {
-				val, mok := data[c.name];
-				if !mok || val==nil {
-					val = ""
-				}
-				caption := fmt.Sprintf(c.GetMaskFormat(), val)
-				if n, err := w.Write([]byte(  TrimEnds(caption,trimend,c.width) )); err != nil {
-					return -1,err
-				} else {
-					cntwrite += n
-				}
-				var delim string
-				if num < cntCols - 1 {
-					delim = borders[t.border][bkVertical]
-				} else {
-					delim = borders[t.border][bkVerticalBorder] + ""
-				}
-				if n, err := w.Write([]byte(delim)); err != nil {
-					return -1,err
-				} else {
-					cntwrite += n
-				}
-			}
-			if n, err := w.Write([]byte("\n")); err != nil {
+		}
+	} else if t.CountData()!=0 {
+		for _, data := range t.data {
+			if n,err := t.writeRecord(data,w);err!=nil {
 				return -1,err
 			} else {
-				cntwrite += n
+				cntwrite+=n
 			}
 		}
 	}
