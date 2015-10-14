@@ -33,18 +33,18 @@ Example 1:
 ```
 
 Output:
-    ╔═════════════════════════╤═════════════════════════╗
-    ║ENV                      │VALUE                    ║
-    ╟─────────────────────────┼─────────────────────────╢
-    ║PAPERSIZE                │a4                       ║
-    ║UPSTART_SESSION          │unix:abstract            ║
-    ║GNOME_DESKTOP_SESSION_ID │this-is-deprecated       ║
-    ║GDMSESSION               │ubuntu                   ║
-    ║IM_CONFIG_PHASE          │1                        ║
-    ║COMPIZ_CONFIG_PROFILE    │ubuntu                   ║
-    ║LANG                     │ru_RU.UTF-8              ║
-    ╚═════════════════════════╧═════════════════════════╝
 ```
+╔═════════════════════════╤═════════════════════════╗
+║ENV                      │VALUE                    ║
+╟─────────────────────────┼─────────────────────────╢
+║PAPERSIZE                │a4                       ║
+║UPSTART_SESSION          │unix:abstract            ║
+║GNOME_DESKTOP_SESSION_ID │this-is-deprecated       ║
+║GDMSESSION               │ubuntu                   ║
+║IM_CONFIG_PHASE          │1                        ║
+║COMPIZ_CONFIG_PROFILE    │ubuntu                   ║
+║LANG                     │ru_RU.UTF-8              ║
+╚═════════════════════════╧═════════════════════════╝
 ```
 
 Example 2:
