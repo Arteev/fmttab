@@ -1,7 +1,7 @@
 # fmttab
 
-[![Build Status](https://travis-ci.org/Arteev/fmttab.svg?branch=master)](https://travis-ci.org/Arteev/fmttab)
-[![Coverage Status](https://coveralls.io/repos/Arteev/fmttab/badge.svg?branch=master&service=github)](https://coveralls.io/github/Arteev/fmttab?branch=master)
+[![Build Status](https://travis-ci.org/arteev/fmttab.svg?branch=master)](https://travis-ci.org/arteev/fmttab)
+[![Coverage Status](https://coveralls.io/repos/arteev/fmttab/badge.svg?branch=master&service=github)](https://coveralls.io/github/arteev/fmttab?branch=master)
 Description
 -----------
 
