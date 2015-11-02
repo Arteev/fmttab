@@ -12,7 +12,7 @@ Installation
 
 This package can be installed with the go get command:
 
-    go get github.com/Arteev/fmttab
+    go get github.com/arteev/fmttab
 
 Documentation
 -------------
