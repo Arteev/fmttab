@@ -7,6 +7,10 @@ import (
 	"testing"
 )
 
+
+//todo: benchmark
+//todo: border_none test
+
 func TestCallAndOut(t *testing.T) {
 	const name = "<THIS IS NAME>"
 	const val = 123
@@ -85,7 +89,7 @@ func TestTrim(t *testing.T) {
 func TestString(t *testing.T) {
 	tab := New("Table", BORDER_THIN, nil)
 	tab.AddColumn("Column1", 8, ALIGN_LEFT)
-	org := "┌────────┐\n│Column1 │\n├────────┤\n└────────┘\n"
+	org := "Table\n┌────────┐\n│Column1 │\n├────────┤\n└────────┘\n"
 	res := tab.String()
 	if org != res {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)

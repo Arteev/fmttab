@@ -9,10 +9,13 @@ import (
 	"strconv"
 )
 
+
+//todo: example border custom
 type Border int
 type borderKind int
 type Align bool
 var (
+	BORDER_NONE = Border(0)
 	BORDER_THIN = Border(1)
 	BORDER_DOUBLE = Border(2)
 	ALIGN_LEFT = Align(false)
@@ -40,6 +43,23 @@ const (
 )
 
 var borders = map[Border]map[borderKind]string{
+	BORDER_NONE:map[borderKind]string{
+		bkBetween : " ",
+		bkLeftTop : "",
+		bkRighttop: "",
+		bkRightBottom: "",
+		bkLeftBottom: "",
+		bkLeftToRight: "",
+		bkRightToLeft: "",
+		bkTopToBottom: "",
+		bkBottomToTop: "",
+		bkBottomCross: "",
+		bkHorizontal: "",
+		bkVertical: "",
+		bkHorizontalBorder:"",
+		bkVerticalBorder:"",
+	},
+
 	BORDER_THIN:map[borderKind]string{
 		bkBetween : "\u2502",
 		bkLeftTop : "\u250c",
@@ -77,18 +97,18 @@ var borders = map[Border]map[borderKind]string{
 
 type DataGetter func() (bool, map[string]interface{})
 
-type column struct {
-	name  string
-	width int
-	aling Align
+type Column struct {
+	Name string
+	Width int
+	Aling Align
 
 }
 
 type Table struct {
-	cols    []*column
+	Columns []*Column
 	caption string
 	border  Border
-	data []map[string]interface{}
+	Data []map[string]interface{}
 	dataget DataGetter
 }
 
@@ -105,48 +125,56 @@ func TrimEnds(val,end string, max int) string {
 	return val[:(max-lend)] + end
 }
 
-func (c *column) GetMaskFormat() string {
+func (c *Column) GetMaskFormat() string {
 
-	if c.aling== ALIGN_LEFT {
-		return 	"%-" + strconv.Itoa(c.width) + "v"
+	if c.Aling == ALIGN_LEFT {
+		return 	"%-" + strconv.Itoa(c.Width) + "v"
 	}
-	return 	"%" + strconv.Itoa(c.width) + "v"
+	return 	"%" + strconv.Itoa(c.Width) + "v"
 }
 
 func (t *Table) AddColumn(name string, width int, aling Align) *Table {
-	t.cols = append(t.cols, &column{
-		name:name,
-		width:width,
-		aling:aling,
+	t.Columns = append(t.Columns, &Column{
+		Name:name,
+		Width:width,
+		Aling:aling,
 	})
 	return t
 }
 
 func (t *Table) AppendData(rec map[string]interface{}) *Table {
-	t.data = append(t.data,rec)
+	t.Data = append(t.Data,rec)
 	return t
 }
 
 func (t *Table) ClearData() *Table{
-	t.data=nil
+	t.Data =nil
 	return t
 }
 
 func (t *Table) CountData() int {
-	return len(t.data)
+	return len(t.Data)
 }
 
 func (t *Table) writeHeader(w io.Writer) (int,error) {
 	var cntwrite int
+
+	if t.caption!="" {
+		if n, err := w.Write([]byte(t.caption+"\n")); err != nil {
+			return -1, err
+		} else {
+			cntwrite += n
+		}
+	}
 
 	if n, err := w.Write([]byte(borders[t.border][bkLeftTop]));err != nil {
 		return -1,err
 	} else {
 		cntwrite+=n
 	}
-	cntCols := len(t.cols)
-	for num, c := range t.cols {
-		if n, err := w.Write([]byte( strings.Repeat(borders[t.border][bkHorizontalBorder], c.width)));err != nil {
+	cntCols := len(t.Columns)
+	for num, c := range t.Columns {
+		if n, err := w.Write([]byte( strings.Repeat(borders[t.border][bkHorizontalBorder], c.Width)));err != nil {
 			return -1,err
 		} else {
 			cntwrite+=n
@@ -170,10 +198,10 @@ func (t *Table) writeHeader(w io.Writer) (int,error) {
 	} else {
 		cntwrite+=n
 	}
-	for num, c := range t.cols {
-		caption := fmt.Sprintf( c.GetMaskFormat(), c.name)
+	for num, c := range t.Columns {
+		caption := fmt.Sprintf( c.GetMaskFormat(), c.Name)
 
-		if n, err := w.Write([]byte( TrimEnds(caption,trimend,c.width) ));err != nil {
+		if n, err := w.Write([]byte( TrimEnds(caption,trimend,c.Width) ));err != nil {
 			return -1,err
 		} else {
 			cntwrite+=n
@@ -204,24 +232,34 @@ func (t *Table) writeHeader(w io.Writer) (int,error) {
 	}else {
 		cntwrite+=n
 	}
-	for num, c := range t.cols {
 
-		if n, err := w.Write([]byte( strings.Repeat(borders[t.border][bkHorizontal], c.width)));err != nil {
+	emptyhdr := true
+	for num, c := range t.Columns {
+		if n, err := w.Write([]byte( strings.Repeat(borders[t.border][bkHorizontal], c.Width)));err != nil {
 			return -1,err
 		}else {
 			cntwrite+=n
+			if n>0 {
+				emptyhdr = false
+			}
 		}
 		var delim string
 		if num < cntCols - 1 {
 			delim = borders[t.border][bkBottomCross]
 		} else {
-			delim = borders[t.border][bkRightToLeft] + "\n"
+			delim = borders[t.border][bkRightToLeft]
+			if !emptyhdr {
+				delim += "\n"
+			}
 		}
 
 		if n, err := w.Write([]byte(delim));err != nil {
 			return -1,err
 		}else {
 			cntwrite+=n
+			if n>0 {
+				emptyhdr = false
+			}
 		}
 	}
 	return cntwrite,nil
@@ -234,23 +272,33 @@ func (t *Table) writeBottomBorder(w io.Writer) (int,error) {
 	} else {
 		cntwrite+=n
 	}
-	cntCols := len(t.cols)
-	for num, c := range t.cols {
-		if n, err := w.Write([]byte( strings.Repeat(borders[t.border][bkHorizontalBorder], c.width))); err != nil {
+	cntCols := len(t.Columns)
+	empty := true
+	for num, c := range t.Columns {
+		if n, err := w.Write([]byte( strings.Repeat(borders[t.border][bkHorizontalBorder], c.Width))); err != nil {
 			return -1,err
 		} else {
 			cntwrite+=n
+			if n>0 {
+				empty=false
+			}
 		}
 		var delim string
 		if num < cntCols - 1 {
 			delim = borders[t.border][bkBottomToTop]
 		} else {
-			delim = borders[t.border][bkRightBottom] + "\n"
+			delim = borders[t.border][bkRightBottom]
+			if !empty{
+				delim+="\n"
+			}
 		}
 		if n, err := w.Write([]byte(delim)); err != nil {
 			return -1,err
 		} else {
 			cntwrite+=n
+			if n>0 {
+				empty=false
+			}
 		}
 	}
 	return cntwrite,nil
@@ -258,19 +306,19 @@ func (t *Table) writeBottomBorder(w io.Writer) (int,error) {
 
 func (t *Table) writeRecord(data map[string]interface{},w io.Writer) (int,error) {
 	var cntwrite int
-	cntCols := len(t.cols)
+	cntCols := len(t.Columns)
 	if n, err := w.Write([]byte(borders[t.border][bkVerticalBorder])); err != nil {
 		return -1,err
 	} else {
 		cntwrite += n
 	}
-	for num, c := range t.cols {
-		val, mok := data[c.name];
+	for num, c := range t.Columns {
+		val, mok := data[c.Name];
 		if !mok || val==nil {
 			val = ""
 		}
 		caption := fmt.Sprintf(c.GetMaskFormat(), val)
-		if n, err := w.Write([]byte(  TrimEnds(caption,trimend,c.width) )); err != nil {
+		if n, err := w.Write([]byte(  TrimEnds(caption,trimend,c.Width) )); err != nil {
 			return -1,err
 		} else {
 			cntwrite += n
@@ -310,7 +358,7 @@ func (t *Table) writeData(w io.Writer) (int,error) {
 			}
 		}
 	} else if t.CountData()!=0 {
-		for _, data := range t.data {
+		for _, data := range t.Data {
 			if n,err := t.writeRecord(data,w);err!=nil {
 				return -1,err
 			} else {
@@ -336,7 +384,7 @@ func (t *Table) String() string {
 }
 
 func (t *Table) WriteTo(w io.Writer)(int64,error){
-	if (len(t.cols)==0) {
+	if (len(t.Columns)==0) {
 		return 0,nil
 	}
 	var cntwrite int64

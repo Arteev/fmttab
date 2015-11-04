@@ -2,7 +2,7 @@ package main
 import (
 	"os"
 	"strings"
-	"github.com/Arteev/fmttab"
+	"github.com/arteev/fmttab"
 )
 func main() {
 	tab := fmttab.New("Environments",fmttab.BORDER_DOUBLE,nil)
