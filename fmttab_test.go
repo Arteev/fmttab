@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-
 //todo: benchmark
 //todo: border_none test
 
@@ -45,16 +44,16 @@ func TestCallAndOut(t *testing.T) {
 		t.Errorf("Excepted in output %v", val)
 	}
 
-	tbl2 := New("", BORDER_DOUBLE,nil)
+	tbl2 := New("", BORDER_DOUBLE, nil)
 	tbl2.AddColumn("ID", 10, ALIGN_LEFT).
 		AddColumn("NAME", 40, ALIGN_RIGHT)
 
-	for _,item := range arr {
+	for _, item := range arr {
 		tbl2.AppendData(item)
 	}
 	sout2 := tbl2.String()
-	if sout2!=sout {
-		t.Errorf("Excepted (AppendData) %q, got %q",sout,sout2)
+	if sout2 != sout {
+		t.Errorf("Excepted (AppendData) %q, got %q", sout, sout2)
 	}
 
 }
@@ -76,7 +75,7 @@ func TestTrim(t *testing.T) {
 		}: "..",
 		{
 			"testing", ">", 5,
-		}:   "test>",
+		}: "test>",
 	}
 	for key, pair := range test {
 		r := TrimEnds(key.val, key.end, key.max)
@@ -118,20 +117,20 @@ func TestString(t *testing.T) {
 }
 
 func TestData(t *testing.T) {
-	tab := New("",BORDER_THIN,nil)
-	if tab.CountData()!=0 {
-		t.Errorf("Excepted 0, got:%d",tab.CountData())
+	tab := New("", BORDER_THIN, nil)
+	if tab.CountData() != 0 {
+		t.Errorf("Excepted 0, got:%d", tab.CountData())
 	}
-	data1 := map[string]interface{} {
-		"COL1":"value1",
-		"COL2":"value2",
+	data1 := map[string]interface{}{
+		"COL1": "value1",
+		"COL2": "value2",
 	}
 	tab.AppendData(data1)
-	if tab.CountData()!=1 {
-		t.Errorf("Excepted 1, got:%d",tab.CountData())
+	if tab.CountData() != 1 {
+		t.Errorf("Excepted 1, got:%d", tab.CountData())
 	}
 	tab.ClearData()
-	if tab.CountData()!=0 {
-		t.Errorf("Excepted 0, got:%d",tab.CountData())
+	if tab.CountData() != 0 {
+		t.Errorf("Excepted 0, got:%d", tab.CountData())
 	}
 }
