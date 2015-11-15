@@ -5,9 +5,9 @@ import (
 	"github.com/arteev/fmttab"
 )
 func main() {
-	tab := fmttab.New("Environments",fmttab.BORDER_DOUBLE,nil)
-	tab.AddColumn("ENV",25,fmttab.ALIGN_LEFT).
-		AddColumn("VALUE",25,fmttab.ALIGN_LEFT)
+	tab := fmttab.New("Environments",fmttab.BorderDouble,nil)
+	tab.AddColumn("ENV",25,fmttab.AlignLeft).
+		AddColumn("VALUE",25,fmttab.AlignLeft)
 	for _,env:=range os.Environ() {
 		keyval := strings.Split(env,"=")
 		tab.AppendData(map[string]interface{} {

@@ -8,7 +8,6 @@ import (
 )
 
 //todo: benchmark
-//todo: border_none test
 
 func TestCallAndOut(t *testing.T) {
 	const name = "<THIS IS NAME>"
@@ -21,7 +20,7 @@ func TestCallAndOut(t *testing.T) {
 	}
 	l := len(arr)
 	cur := 0
-	tbl := New("", BORDER_DOUBLE, func() (bool, map[string]interface{}) {
+	tbl := New("", BorderDouble, func() (bool, map[string]interface{}) {
 		if cur >= l {
 			return false, nil
 		}
@@ -29,8 +28,8 @@ func TestCallAndOut(t *testing.T) {
 		cur++
 		return true, r
 	})
-	tbl.AddColumn("ID", 10, ALIGN_LEFT).
-		AddColumn("NAME", 40, ALIGN_RIGHT)
+	tbl.AddColumn("ID", 10, AlignLeft).
+		AddColumn("NAME", 40, AlignRight)
 
 	sout := tbl.String()
 	if cur != 1 {
@@ -44,9 +43,9 @@ func TestCallAndOut(t *testing.T) {
 		t.Errorf("Excepted in output %v", val)
 	}
 
-	tbl2 := New("", BORDER_DOUBLE, nil)
-	tbl2.AddColumn("ID", 10, ALIGN_LEFT).
-		AddColumn("NAME", 40, ALIGN_RIGHT)
+	tbl2 := New("", BorderDouble, nil)
+	tbl2.AddColumn("ID", 10, AlignLeft).
+		AddColumn("NAME", 40, AlignRight)
 
 	for _, item := range arr {
 		tbl2.AppendData(item)
@@ -78,7 +77,7 @@ func TestTrim(t *testing.T) {
 		}: "test>",
 	}
 	for key, pair := range test {
-		r := TrimEnds(key.val, key.end, key.max)
+		r := trimEnds(key.val, key.end, key.max)
 		if r != pair {
 			t.Errorf("Excepted %q, got %q", pair, r)
 		}
@@ -86,8 +85,8 @@ func TestTrim(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	tab := New("Table", BORDER_THIN, nil)
-	tab.AddColumn("Column1", 8, ALIGN_LEFT)
+	tab := New("Table", BorderThin, nil)
+	tab.AddColumn("Column1", 8, AlignLeft)
 	org := "Table\n┌────────┐\n│Column1 │\n├────────┤\n└────────┘\n"
 	res := tab.String()
 	if org != res {
@@ -105,7 +104,7 @@ func TestString(t *testing.T) {
 	}
 
 	var buf2 bytes.Buffer
-	tab2 := New("", BORDER_THIN, nil)
+	tab2 := New("", BorderThin, nil)
 	if cntwrite, err := tab2.WriteTo(&buf2); err != nil {
 		t.Error(err)
 	} else {
@@ -117,7 +116,7 @@ func TestString(t *testing.T) {
 }
 
 func TestData(t *testing.T) {
-	tab := New("", BORDER_THIN, nil)
+	tab := New("", BorderThin, nil)
 	if tab.CountData() != 0 {
 		t.Errorf("Excepted 0, got:%d", tab.CountData())
 	}

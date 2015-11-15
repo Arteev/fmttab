@@ -13,8 +13,8 @@ func main() {
 		fmttab.BKHorizontalBorder : "_",
 	}
 	tab := fmttab.New("Custom table:",BORDER_MY,nil)
-	tab.AddColumn("Key",15,fmttab.ALIGN_LEFT).
-		AddColumn("Value",15,fmttab.ALIGN_RIGHT)
+	tab.AddColumn("Key",15,fmttab.AlignLeft).
+		AddColumn("Value",15,fmttab.AlignRight)
 	tab.Data = []map[string]interface{}{
 		{
 			"Key":"Key One",

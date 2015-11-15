@@ -2,28 +2,37 @@ package fmttab
 
 import (
 	"bytes"
-
-	"io"
-
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 )
 
+//A Border of table
 type Border int
+
+//A BorderKind type of element on the border of the table
 type BorderKind int
+
+//A Align text alignment in column of the table
 type Align bool
 
 var (
-	BORDER_NONE   = Border(0)
-	BORDER_THIN   = Border(1)
-	BORDER_DOUBLE = Border(2)
-	ALIGN_LEFT    = Align(false)
-	ALIGN_RIGHT   = Align(true)
+	//BorderNone table without borders
+	BorderNone = Border(0)
+	//BorderThin table with a thin border
+	BorderThin = Border(1)
+	//BorderDouble table with a double border
+	BorderDouble = Border(2)
+	//AlignLeft align text along the left edge
+	AlignLeft = Align(false)
+	//AlignRight align text along the right edge
+	AlignRight = Align(true)
 )
 
+//The concrete type of the object on the border of the table
 const (
-	BKLeftTop = iota
+	BKLeftTop BorderKind = iota
 	BKRighttop
 	BKRightBottom
 	BKLeftBottom
@@ -42,12 +51,12 @@ const (
 	trimend = ".."
 )
 
+//Borders predefined border types
 var Borders = map[Border]map[BorderKind]string{
-	BORDER_NONE: map[BorderKind]string{
+	BorderNone: map[BorderKind]string{
 		BKVertical: "|",
 	},
-
-	BORDER_THIN: map[BorderKind]string{
+	BorderThin: map[BorderKind]string{
 		BKLeftTop:          "\u250c",
 		BKRighttop:         "\u2510",
 		BKRightBottom:      "\u2518",
@@ -62,7 +71,7 @@ var Borders = map[Border]map[BorderKind]string{
 		BKHorizontalBorder: "\u2500",
 		BKVerticalBorder:   "\u2502",
 	},
-	BORDER_DOUBLE: map[BorderKind]string{
+	BorderDouble: map[BorderKind]string{
 		BKLeftTop:          "\u2554",
 		BKRighttop:         "\u2557",
 		BKRightBottom:      "\u255d",
@@ -79,14 +88,17 @@ var Borders = map[Border]map[BorderKind]string{
 	},
 }
 
+//A DataGetter functional type for table data
 type DataGetter func() (bool, map[string]interface{})
 
+//A Column type of table columns
 type Column struct {
 	Name  string
 	Width int
 	Aling Align
 }
 
+//A Table is the repository for the columns, the data that are used for printing the table
 type Table struct {
 	Columns []*Column
 	caption string
@@ -95,7 +107,8 @@ type Table struct {
 	dataget DataGetter
 }
 
-func TrimEnds(val, end string, max int) string {
+// A trimEnds supplements the text with special characters by limiting the length of the text column width
+func trimEnds(val, end string, max int) string {
 	l := len(val)
 	if l <= max {
 		return val
@@ -107,15 +120,18 @@ func TrimEnds(val, end string, max int) string {
 	return val[:(max-lend)] + end
 }
 
+//GetMaskFormat returns a pattern string for formatting text in table column alignment
 func (c *Column) GetMaskFormat() string {
 
-	if c.Aling == ALIGN_LEFT {
+	if c.Aling == AlignLeft {
 		return "%-" + strconv.Itoa(c.Width) + "v"
 	}
 	return "%" + strconv.Itoa(c.Width) + "v"
 }
 
+//AddColumn adds a column to the table
 func (t *Table) AddColumn(name string, width int, aling Align) *Table {
+	//TODO: check dupl
 	t.Columns = append(t.Columns, &Column{
 		Name:  name,
 		Width: width,
@@ -124,163 +140,96 @@ func (t *Table) AddColumn(name string, width int, aling Align) *Table {
 	return t
 }
 
+//AppendData adds the data to the table
 func (t *Table) AppendData(rec map[string]interface{}) *Table {
 	t.Data = append(t.Data, rec)
 	return t
 }
 
+//ClearData removes data from a table
 func (t *Table) ClearData() *Table {
 	t.Data = nil
 	return t
 }
 
+//CountData the amount of data in the table
 func (t *Table) CountData() int {
 	return len(t.Data)
 }
 
 func (t *Table) writeHeader(w io.Writer) (int, error) {
 	var cntwrite int
-
+	dataout := ""
 	if t.caption != "" {
-		if n, err := w.Write([]byte(t.caption + "\n")); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-		}
+		dataout += t.caption + "\n"
 	}
-
-	if n, err := w.Write([]byte(Borders[t.border][BKLeftTop])); err != nil {
-		return -1, err
-	} else {
-		cntwrite += n
-	}
+	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
 	for num, c := range t.Columns {
-		if n, err := w.Write([]byte(strings.Repeat(Borders[t.border][BKHorizontalBorder], c.Width))); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-		}
+		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], c.Width)
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKTopToBottom]
 		} else {
 			delim = Borders[t.border][BKRighttop] + "\n"
 		}
-
-		if n, err := w.Write([]byte(delim)); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-		}
+		dataout += delim
 	}
-
-	if n, err := w.Write([]byte(Borders[t.border][BKVerticalBorder])); err != nil {
-		return -1, err
-	} else {
-		cntwrite += n
-	}
+	dataout += Borders[t.border][BKVerticalBorder]
 	for num, c := range t.Columns {
 		caption := fmt.Sprintf(c.GetMaskFormat(), c.Name)
-
-		if n, err := w.Write([]byte(TrimEnds(caption, trimend, c.Width))); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-		}
-
+		dataout += trimEnds(caption, trimend, c.Width)
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKVertical]
 		} else {
 			delim = Borders[t.border][BKVerticalBorder] + ""
 		}
-
-		if n, err := w.Write([]byte(delim)); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-		}
+		dataout += delim
 	}
-
-	if n, err := w.Write([]byte("\n")); err != nil {
+	dataout += "\n" + Borders[t.border][BKLeftToRight]
+	dataout += t.writeBorderTopButtomData(BKHorizontal, BKBottomCross, BKRightToLeft)
+	if n, err := w.Write([]byte(dataout)); err == nil {
+		cntwrite += n
+	} else {
 		return -1, err
-	} else {
-		cntwrite += n
-	}
-	if n, err := w.Write([]byte(Borders[t.border][BKLeftToRight])); err != nil {
-		return 1, err
-	} else {
-		cntwrite += n
-	}
-
-	emptyhdr := true
-	for num, c := range t.Columns {
-		if n, err := w.Write([]byte(strings.Repeat(Borders[t.border][BKHorizontal], c.Width))); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-			if n > 0 {
-				emptyhdr = false
-			}
-		}
-		var delim string
-		if num < cntCols-1 {
-			delim = Borders[t.border][BKBottomCross]
-		} else {
-			delim = Borders[t.border][BKRightToLeft]
-			if !emptyhdr {
-				delim += "\n"
-			}
-		}
-
-		if n, err := w.Write([]byte(delim)); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-			if n > 0 {
-				emptyhdr = false
-			}
-		}
 	}
 	return cntwrite, nil
 }
 
-func (t *Table) writeBottomBorder(w io.Writer) (int, error) {
-	var cntwrite int
-	if n, err := w.Write([]byte(Borders[t.border][BKLeftBottom])); err != nil {
-		return -1, err
-	} else {
-		cntwrite += n
-	}
+func (t *Table) writeBorderTopButtomData(hr, vbwnCol, vright BorderKind) (data string) {
 	cntCols := len(t.Columns)
 	empty := true
 	for num, c := range t.Columns {
-		if n, err := w.Write([]byte(strings.Repeat(Borders[t.border][BKHorizontalBorder], c.Width))); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-			if n > 0 {
-				empty = false
-			}
+		s := strings.Repeat(Borders[t.border][hr], c.Width)
+		if len(s) > 0 {
+			empty = false
 		}
+		data += s
 		var delim string
 		if num < cntCols-1 {
-			delim = Borders[t.border][BKBottomToTop]
+			delim = Borders[t.border][vbwnCol]
 		} else {
-			delim = Borders[t.border][BKRightBottom]
+			delim = Borders[t.border][vright]
 			if !empty {
 				delim += "\n"
 			}
 		}
-		if n, err := w.Write([]byte(delim)); err != nil {
-			return -1, err
-		} else {
-			cntwrite += n
-			if n > 0 {
-				empty = false
-			}
+		if len(delim) > 0 {
+			empty = false
 		}
+		data += delim
+	}
+	return data
+}
+
+func (t *Table) writeBottomBorder(w io.Writer) (int, error) {
+	var cntwrite int
+	data := Borders[t.border][BKLeftBottom] + t.writeBorderTopButtomData(BKHorizontalBorder, BKBottomToTop, BKRightBottom)
+	if n, err := w.Write([]byte(data)); err == nil {
+		cntwrite = n
+	} else {
+		return -1, err
 	}
 	return cntwrite, nil
 }
@@ -288,10 +237,10 @@ func (t *Table) writeBottomBorder(w io.Writer) (int, error) {
 func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, error) {
 	var cntwrite int
 	cntCols := len(t.Columns)
-	if n, err := w.Write([]byte(Borders[t.border][BKVerticalBorder])); err != nil {
-		return -1, err
-	} else {
+	if n, err := w.Write([]byte(Borders[t.border][BKVerticalBorder])); err == nil {
 		cntwrite += n
+	} else {
+		return -1, err
 	}
 	for num, c := range t.Columns {
 		val, mok := data[c.Name]
@@ -299,10 +248,10 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 			val = ""
 		}
 		caption := fmt.Sprintf(c.GetMaskFormat(), val)
-		if n, err := w.Write([]byte(TrimEnds(caption, trimend, c.Width))); err != nil {
-			return -1, err
-		} else {
+		if n, err := w.Write([]byte(trimEnds(caption, trimend, c.Width))); err == nil {
 			cntwrite += n
+		} else {
+			return -1, err
 		}
 		var delim string
 		if num < cntCols-1 {
@@ -310,16 +259,16 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 		} else {
 			delim = Borders[t.border][BKVerticalBorder] + ""
 		}
-		if n, err := w.Write([]byte(delim)); err != nil {
-			return -1, err
-		} else {
+		if n, err := w.Write([]byte(delim)); err == nil {
 			cntwrite += n
+		} else {
+			return -1, err
 		}
 	}
-	if n, err := w.Write([]byte("\n")); err != nil {
-		return -1, err
-	} else {
+	if n, err := w.Write([]byte("\n")); err == nil {
 		cntwrite += n
+	} else {
+		return -1, err
 	}
 	return cntwrite, nil
 }
@@ -332,24 +281,25 @@ func (t *Table) writeData(w io.Writer) (int, error) {
 			if !ok {
 				break
 			}
-			if n, err := t.writeRecord(data, w); err != nil {
-				return -1, err
-			} else {
+			if n, err := t.writeRecord(data, w); err == nil {
 				cntwrite += n
+			} else {
+				return -1, err
 			}
 		}
 	} else if t.CountData() != 0 {
 		for _, data := range t.Data {
-			if n, err := t.writeRecord(data, w); err != nil {
-				return -1, err
-			} else {
+			if n, err := t.writeRecord(data, w); err == nil {
 				cntwrite += n
+			} else {
+				return -1, err
 			}
 		}
 	}
 	return cntwrite, nil
 }
 
+//New creates a Table object. DataGetter can be nil
 func New(caption string, border Border, datagetter DataGetter) *Table {
 	return &Table{
 		caption: caption,
@@ -358,31 +308,39 @@ func New(caption string, border Border, datagetter DataGetter) *Table {
 	}
 }
 
+// String returns the contents of the table with borders
+// as a string.  If error, it returns "".
 func (t *Table) String() string {
 	var buf bytes.Buffer
-	t.WriteTo(&buf)
+	if _, err := t.WriteTo(&buf); err != nil {
+		return ""
+	}
 	return buf.String()
 }
 
+// WriteTo writes data to w until the buffer is drained or an error occurs.
+// The return value n is the number of bytes written; it always fits into an
+// int, but it is int64 to match the io.WriterTo interface. Any error
+// encountered during the write is also returned.
 func (t *Table) WriteTo(w io.Writer) (int64, error) {
 	if len(t.Columns) == 0 {
 		return 0, nil
 	}
 	var cntwrite int64
-	if n, err := t.writeHeader(w); err != nil {
-		return -1, err
-	} else {
+	if n, err := t.writeHeader(w); err == nil {
 		cntwrite += int64(n)
+	} else {
+		return -1, err
 	}
-	if n, err := t.writeData(w); err != nil {
-		return -1, err
-	} else {
+	if n, err := t.writeData(w); err == nil {
 		cntwrite += int64(n)
+	} else {
+		return -1, err
 	}
-	if n, err := t.writeBottomBorder(w); err != nil {
-		return -1, err
-	} else {
+	if n, err := t.writeBottomBorder(w); err == nil {
 		cntwrite += int64(n)
+	} else {
+		return -1, err
 	}
 	return cntwrite, nil
 }

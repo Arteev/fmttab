@@ -5,13 +5,13 @@ import (
 	"github.com/arteev/fmttab"
 )
 func main() {
-	tab := fmttab.New("Environments:",fmttab.BORDER_NONE,nil)
+	tab := fmttab.New("Environments:",fmttab.BorderNone,nil)
 	tab.Columns = []*fmttab.Column{
 		{
-			Name:"ENV",Width:25,Aling:fmttab.ALIGN_LEFT,
+			Name:"ENV",Width:25,Aling:fmttab.AlignLeft,
 		},
 		{
-			Name:"VALUE",Width:25,Aling:fmttab.ALIGN_LEFT,
+			Name:"VALUE",Width:25,Aling:fmttab.AlignLeft,
 		},
 	}
 	for _,env:=range os.Environ() {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/Arteev/fmttab"
+	"github.com/arteev/fmttab"
 	"os"
 	"path/filepath"
 )
@@ -23,16 +23,16 @@ func main() {
 	i:=0
 	lfiles:=len(files)
 
-	tab := fmttab.New("Table",fmttab.BORDER_DOUBLE,func() (bool, map[string]interface{}) {
+	tab := fmttab.New("Table",fmttab.BorderDouble,func() (bool, map[string]interface{}) {
 		if i>=lfiles {
 			return false,nil
 		}
 		i++
 		return true,files[i-1]
 	})
-	tab.AddColumn("Name",30,fmttab.ALIGN_LEFT).
-		AddColumn("Size",10,fmttab.ALIGN_RIGHT).
-		AddColumn("Time",20,fmttab.ALIGN_LEFT).
-		AddColumn("Dir",6,fmttab.ALIGN_LEFT)
+	tab.AddColumn("Name",30,fmttab.AlignLeft).
+		AddColumn("Size",10,fmttab.AlignRight).
+		AddColumn("Time",20,fmttab.AlignLeft).
+		AddColumn("Dir",6,fmttab.AlignLeft)
 	tab.WriteTo(os.Stdout)
 }
