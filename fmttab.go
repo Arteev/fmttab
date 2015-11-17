@@ -17,7 +17,7 @@ type BorderKind int
 //A Align text alignment in column of the table
 type Align bool
 
-var (
+const (
 	//BorderNone table without borders
 	BorderNone = Border(0)
 	//BorderThin table with a thin border
