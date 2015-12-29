@@ -115,6 +115,19 @@ func TestString(t *testing.T) {
 
 }
 
+func TestNationalChars(t *testing.T) {
+	tab := New("Table", BorderThin, nil)
+	tab.AddColumn("Column1", 16, AlignLeft)
+	org := "Table\n┌────────────────┐\n│Column1         │\n├────────────────┤\n│Русский         │\n└────────────────┘\n"
+	tab.AppendData(map[string]interface{}{
+		"Column1":"Русский",
+	})
+	res := tab.String()
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
+	}
+}
+
 func TestData(t *testing.T) {
 	tab := New("", BorderThin, nil)
 	if tab.CountData() != 0 {

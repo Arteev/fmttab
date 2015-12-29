@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 )
 
 //A Border of table
@@ -109,15 +110,15 @@ type Table struct {
 
 // A trimEnds supplements the text with special characters by limiting the length of the text column width
 func trimEnds(val, end string, max int) string {
-	l := len(val)
+	l := utf8.RuneCountInString(val)
 	if l <= max {
 		return val
 	}
-	lend := len(end)
+	lend := utf8.RuneCountInString(end)
 	if lend >= max {
 		return end[:max]
 	}
-	return val[:(max-lend)] + end
+	return string([]rune(val)[:(max-lend)]) + end
 }
 
 //GetMaskFormat returns a pattern string for formatting text in table column alignment
@@ -131,7 +132,7 @@ func (c *Column) GetMaskFormat() string {
 
 //AddColumn adds a column to the table
 func (t *Table) AddColumn(name string, width int, aling Align) *Table {
-	//TODO: check dupl
+	//TODO: check dublicate
 	t.Columns = append(t.Columns, &Column{
 		Name:  name,
 		Width: width,
@@ -183,7 +184,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKVertical]
 		} else {
-			delim = Borders[t.border][BKVerticalBorder] + ""
+			delim = Borders[t.border][BKVerticalBorder]
 		}
 		dataout += delim
 	}
@@ -257,7 +258,7 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKVertical]
 		} else {
-			delim = Borders[t.border][BKVerticalBorder] + ""
+			delim = Borders[t.border][BKVerticalBorder]
 		}
 		if n, err := w.Write([]byte(delim)); err == nil {
 			cntwrite += n
