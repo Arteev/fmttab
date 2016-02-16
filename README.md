@@ -83,7 +83,7 @@ Example 2:
         })
         tab.AddColumn("Name",30,fmttab.AlignLeft).
             AddColumn("Size",10,fmttab.AlignRight).
-            AddColumn("Time",20,fmttab.AlignLeft).
+            AddColumn("Time",fmttab.AutoWidth,fmttab.AlignLeft).
             AddColumn("Dir",6,fmttab.AlignLeft)
         tab.WriteTo(os.Stdout)
     }

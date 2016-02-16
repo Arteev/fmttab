@@ -19,6 +19,8 @@ type BorderKind int
 type Align bool
 
 const (
+	//WidthAuto auto sizing of width column
+	WidthAuto = 0
 	//BorderNone table without borders
 	BorderNone = Border(0)
 	//BorderThin table with a thin border
@@ -94,9 +96,10 @@ type DataGetter func() (bool, map[string]interface{})
 
 //A Column type of table columns
 type Column struct {
-	Name  string
-	Width int
-	Aling Align
+	maxLen int
+	Name   string
+	Width  int
+	Aling  Align
 }
 
 //A Table is the repository for the columns, the data that are used for printing the table
@@ -123,11 +126,18 @@ func trimEnds(val, end string, max int) string {
 
 //GetMaskFormat returns a pattern string for formatting text in table column alignment
 func (c *Column) GetMaskFormat() string {
-
 	if c.Aling == AlignLeft {
-		return "%-" + strconv.Itoa(c.Width) + "v"
+		return "%-" + strconv.Itoa(c.getWidth()) + "v"
 	}
-	return "%" + strconv.Itoa(c.Width) + "v"
+	return "%" + strconv.Itoa(c.getWidth()) + "v"
+}
+
+//must be calculated before call
+func (c *Column) getWidth() int {
+	if c.Width == WidthAuto {
+		return c.maxLen
+	}
+	return c.Width
 }
 
 //AddColumn adds a column to the table
@@ -167,7 +177,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
 	for num, c := range t.Columns {
-		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], c.Width)
+		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], c.getWidth())
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKTopToBottom]
@@ -179,7 +189,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	dataout += Borders[t.border][BKVerticalBorder]
 	for num, c := range t.Columns {
 		caption := fmt.Sprintf(c.GetMaskFormat(), c.Name)
-		dataout += trimEnds(caption, trimend, c.Width)
+		dataout += trimEnds(caption, trimend, c.getWidth())
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKVertical]
@@ -202,7 +212,7 @@ func (t *Table) writeBorderTopButtomData(hr, vbwnCol, vright BorderKind) (data s
 	cntCols := len(t.Columns)
 	empty := true
 	for num, c := range t.Columns {
-		s := strings.Repeat(Borders[t.border][hr], c.Width)
+		s := strings.Repeat(Borders[t.border][hr], c.getWidth())
 		if len(s) > 0 {
 			empty = false
 		}
@@ -249,7 +259,7 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 			val = ""
 		}
 		caption := fmt.Sprintf(c.GetMaskFormat(), val)
-		if n, err := w.Write([]byte(trimEnds(caption, trimend, c.Width))); err == nil {
+		if n, err := w.Write([]byte(trimEnds(caption, trimend, c.getWidth()))); err == nil {
 			cntwrite += n
 		} else {
 			return -1, err
@@ -319,6 +329,30 @@ func (t *Table) String() string {
 	return buf.String()
 }
 
+func (t *Table) autoWidth() {
+	var wa []*Column
+	for i := range t.Columns {
+		if t.Columns[i].Width == WidthAuto {
+			t.Columns[i].maxLen = len(t.Columns[i].Name)
+			wa = append(wa, t.Columns[i])
+		}
+	}
+	if len(wa) == 0 {
+		return
+	}
+	for _, data := range t.Data {
+		for i := range wa {
+			curval := fmt.Sprintf("%v", data[wa[i].Name])
+			curlen := len(curval)
+			if curlen > wa[i].maxLen {
+				wa[i].maxLen = curlen
+			}
+		}
+	}
+
+	fmt.Println(wa)
+}
+
 // WriteTo writes data to w until the buffer is drained or an error occurs.
 // The return value n is the number of bytes written; it always fits into an
 // int, but it is int64 to match the io.WriterTo interface. Any error
@@ -327,6 +361,7 @@ func (t *Table) WriteTo(w io.Writer) (int64, error) {
 	if len(t.Columns) == 0 {
 		return 0, nil
 	}
+	t.autoWidth()
 	var cntwrite int64
 	if n, err := t.writeHeader(w); err == nil {
 		cntwrite += int64(n)

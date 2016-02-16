@@ -120,7 +120,7 @@ func TestNationalChars(t *testing.T) {
 	tab.AddColumn("Column1", 16, AlignLeft)
 	org := "Table\n┌────────────────┐\n│Column1         │\n├────────────────┤\n│Русский         │\n└────────────────┘\n"
 	tab.AppendData(map[string]interface{}{
-		"Column1":"Русский",
+		"Column1": "Русский",
 	})
 	res := tab.String()
 	if org != res {
@@ -144,5 +144,18 @@ func TestData(t *testing.T) {
 	tab.ClearData()
 	if tab.CountData() != 0 {
 		t.Errorf("Excepted 0, got:%d", tab.CountData())
+	}
+}
+
+func TestAutoWidthColumns(t *testing.T) {
+	tab := New("Table", BorderThin, nil)
+	tab.AddColumn("Column1", WidthAuto, AlignLeft)
+	org := "Table\n┌──────────┐\n│Column1   │\n├──────────┤\n│1234567890│\n└──────────┘\n"
+	tab.AppendData(map[string]interface{}{
+		"Column1": "1234567890",
+	})
+	res := tab.String()
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
 	}
 }
