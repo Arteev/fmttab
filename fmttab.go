@@ -59,7 +59,7 @@ const (
 //Borders predefined border types
 var Borders = map[Border]map[BorderKind]string{
 	BorderNone: map[BorderKind]string{
-		BKVertical: "|",
+		BKVertical: " ",
 	},
 	BorderThin: map[BorderKind]string{
 		BKLeftTop:          "\u250c",
@@ -188,7 +188,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	}
 	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
-	for num, c := range t.Columns {
+	for num, c := range t.Columns {        
 		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
@@ -364,7 +364,7 @@ func (t *Table) autoWidth() error {
 	}
 	//autosize table
 	if t.autoSize > 0 {
-		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical]) - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
+		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical]) * len(t.Columns) - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
 		nowwidths := make([]int, len(t.Columns))
 		allcolswidth := 0
 		for i := range t.Columns {
