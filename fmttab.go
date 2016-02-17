@@ -348,9 +348,7 @@ func (t *Table) autoWidth() {
 				wa[i].maxLen = curlen
 			}
 		}
-	}
-
-	fmt.Println(wa)
+	}	
 }
 
 // WriteTo writes data to w until the buffer is drained or an error occurs.
