@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"math"
 )
 
 //A Border of table
@@ -104,11 +106,12 @@ type Column struct {
 
 //A Table is the repository for the columns, the data that are used for printing the table
 type Table struct {
-	Columns []*Column
-	caption string
-	border  Border
-	Data    []map[string]interface{}
-	dataget DataGetter
+	dataget  DataGetter
+	border   Border
+	caption  string
+	autoSize int
+	Columns  []*Column
+	Data     []map[string]interface{}
 }
 
 // A trimEnds supplements the text with special characters by limiting the length of the text column width
@@ -125,16 +128,16 @@ func trimEnds(val, end string, max int) string {
 }
 
 //GetMaskFormat returns a pattern string for formatting text in table column alignment
-func (c *Column) GetMaskFormat() string {
+func (t *Table) GetMaskFormat(c *Column) string {
 	if c.Aling == AlignLeft {
-		return "%-" + strconv.Itoa(c.getWidth()) + "v"
+		return "%-" + strconv.Itoa(t.getWidth(c)) + "v"
 	}
-	return "%" + strconv.Itoa(c.getWidth()) + "v"
+	return "%" + strconv.Itoa(t.getWidth(c)) + "v"
 }
 
 //must be calculated before call
-func (c *Column) getWidth() int {
-	if c.Width == WidthAuto {
+func (t *Table) getWidth(c *Column) int {
+	if c.Width == WidthAuto || t.autoSize > 0 {
 		return c.maxLen
 	}
 	return c.Width
@@ -163,6 +166,15 @@ func (t *Table) ClearData() *Table {
 	return t
 }
 
+//AutoSize fit columns
+func (t *Table) AutoSize(enabled bool, destWidth int) {
+	if enabled {
+		t.autoSize = destWidth
+	} else {
+		t.autoSize = 0
+	}
+}
+
 //CountData the amount of data in the table
 func (t *Table) CountData() int {
 	return len(t.Data)
@@ -177,7 +189,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
 	for num, c := range t.Columns {
-		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], c.getWidth())
+		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKTopToBottom]
@@ -188,8 +200,8 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	}
 	dataout += Borders[t.border][BKVerticalBorder]
 	for num, c := range t.Columns {
-		caption := fmt.Sprintf(c.GetMaskFormat(), c.Name)
-		dataout += trimEnds(caption, trimend, c.getWidth())
+		caption := fmt.Sprintf(t.GetMaskFormat(c), c.Name)
+		dataout += trimEnds(caption, trimend, t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKVertical]
@@ -212,7 +224,7 @@ func (t *Table) writeBorderTopButtomData(hr, vbwnCol, vright BorderKind) (data s
 	cntCols := len(t.Columns)
 	empty := true
 	for num, c := range t.Columns {
-		s := strings.Repeat(Borders[t.border][hr], c.getWidth())
+		s := strings.Repeat(Borders[t.border][hr], t.getWidth(c))
 		if len(s) > 0 {
 			empty = false
 		}
@@ -258,8 +270,8 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 		if !mok || val == nil {
 			val = ""
 		}
-		caption := fmt.Sprintf(c.GetMaskFormat(), val)
-		if n, err := w.Write([]byte(trimEnds(caption, trimend, c.getWidth()))); err == nil {
+		caption := fmt.Sprintf(t.GetMaskFormat(c), val)
+		if n, err := w.Write([]byte(trimEnds(caption, trimend, t.getWidth(c)))); err == nil {
 			cntwrite += n
 		} else {
 			return -1, err
@@ -329,16 +341,17 @@ func (t *Table) String() string {
 	return buf.String()
 }
 
-func (t *Table) autoWidth() {
+func (t *Table) autoWidth() error {
+	//each column
 	var wa []*Column
 	for i := range t.Columns {
-		if t.Columns[i].Width == WidthAuto {
+		if t.Columns[i].Width == WidthAuto || t.autoSize > 0 {
 			t.Columns[i].maxLen = len(t.Columns[i].Name)
 			wa = append(wa, t.Columns[i])
 		}
 	}
 	if len(wa) == 0 {
-		return
+		return nil
 	}
 	for _, data := range t.Data {
 		for i := range wa {
@@ -348,7 +361,43 @@ func (t *Table) autoWidth() {
 				wa[i].maxLen = curlen
 			}
 		}
-	}	
+	}
+	//autosize table
+	if t.autoSize > 0 {
+		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical]) - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
+		nowwidths := make([]int, len(t.Columns))
+		allcolswidth := 0
+		for i := range t.Columns {
+			if t.Columns[i].maxLen > t.Columns[i].Width || t.Columns[i].Width == WidthAuto {
+				nowwidths[i] = t.Columns[i].maxLen
+			} else {
+				nowwidths[i] = t.Columns[i].Width
+			}
+			allcolswidth += nowwidths[i]
+		}
+		//todo: allcolswidth - borders
+		twAll := 0
+		for i := range t.Columns {			
+			t.Columns[i].maxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))			
+			twAll += t.Columns[i].maxLen
+		}
+		i := 0
+		//distrib mod
+		for {
+			if twAll >= termwidth || twAll <= 0 {
+				break
+			}
+			if i+1 >= len(t.Columns) {
+				i = 0
+			}            
+			t.Columns[i].maxLen = t.Columns[i].maxLen + 1
+            
+			twAll = twAll + 1
+			i = i + 1
+		}
+	}
+
+	return nil
 }
 
 // WriteTo writes data to w until the buffer is drained or an error occurs.
@@ -359,7 +408,9 @@ func (t *Table) WriteTo(w io.Writer) (int64, error) {
 	if len(t.Columns) == 0 {
 		return 0, nil
 	}
-	t.autoWidth()
+	if err := t.autoWidth(); err != nil {
+		return 0, err
+	}
 	var cntwrite int64
 	if n, err := t.writeHeader(w); err == nil {
 		cntwrite += int64(n)
