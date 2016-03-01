@@ -180,6 +180,11 @@ func (t *Table) CountData() int {
 	return len(t.Data)
 }
 
+//SetBorder - set  type of border table 
+func (t *Table) SetBorder(b Border) {
+	t.border = b
+}
+
 func (t *Table) writeHeader(w io.Writer) (int, error) {
 	var cntwrite int
 	dataout := ""
@@ -188,7 +193,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	}
 	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
-	for num, c := range t.Columns {        
+	for num, c := range t.Columns {
 		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
@@ -364,7 +369,7 @@ func (t *Table) autoWidth() error {
 	}
 	//autosize table
 	if t.autoSize > 0 {
-		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical]) * len(t.Columns) - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
+		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical])*len(t.Columns) - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
 		nowwidths := make([]int, len(t.Columns))
 		allcolswidth := 0
 		for i := range t.Columns {
@@ -377,8 +382,8 @@ func (t *Table) autoWidth() error {
 		}
 		//todo: allcolswidth - borders
 		twAll := 0
-		for i := range t.Columns {			
-			t.Columns[i].maxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))			
+		for i := range t.Columns {
+			t.Columns[i].maxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))
 			twAll += t.Columns[i].maxLen
 		}
 		i := 0
@@ -389,9 +394,9 @@ func (t *Table) autoWidth() error {
 			}
 			if i+1 >= len(t.Columns) {
 				i = 0
-			}            
+			}
 			t.Columns[i].maxLen = t.Columns[i].maxLen + 1
-            
+
 			twAll = twAll + 1
 			i = i + 1
 		}
