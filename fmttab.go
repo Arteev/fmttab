@@ -9,6 +9,8 @@ import (
 	"unicode/utf8"
 
 	"math"
+
+	"github.com/arteev/fmttab/columns"
 )
 
 //A Border of table
@@ -17,12 +19,9 @@ type Border int
 //A BorderKind type of element on the border of the table
 type BorderKind int
 
-//A Align text alignment in column of the table
-type Align bool
-
 const (
 	//WidthAuto auto sizing of width column
-	WidthAuto = 0
+	WidthAuto = columns.WidthAuto
 	//BorderNone table without borders
 	BorderNone = Border(0)
 	//BorderThin table with a thin border
@@ -30,9 +29,9 @@ const (
 	//BorderDouble table with a double border
 	BorderDouble = Border(2)
 	//AlignLeft align text along the left edge
-	AlignLeft = Align(false)
+	AlignLeft = columns.AlignLeft
 	//AlignRight align text along the right edge
-	AlignRight = Align(true)
+	AlignRight = columns.AlignRight
 )
 
 //The concrete type of the object on the border of the table
@@ -96,21 +95,13 @@ var Borders = map[Border]map[BorderKind]string{
 //A DataGetter functional type for table data
 type DataGetter func() (bool, map[string]interface{})
 
-//A Column type of table columns
-type Column struct {
-	maxLen int
-	Name   string
-	Width  int
-	Aling  Align
-}
-
 //A Table is the repository for the columns, the data that are used for printing the table
 type Table struct {
 	dataget  DataGetter
 	border   Border
 	caption  string
 	autoSize int
-	Columns  []*Column
+	Columns  columns.Columns
 	Data     []map[string]interface{}
 }
 
@@ -128,7 +119,7 @@ func trimEnds(val, end string, max int) string {
 }
 
 //GetMaskFormat returns a pattern string for formatting text in table column alignment
-func (t *Table) GetMaskFormat(c *Column) string {
+func (t *Table) GetMaskFormat(c *columns.Column) string {
 	if c.Aling == AlignLeft {
 		return "%-" + strconv.Itoa(t.getWidth(c)) + "v"
 	}
@@ -136,21 +127,19 @@ func (t *Table) GetMaskFormat(c *Column) string {
 }
 
 //must be calculated before call
-func (t *Table) getWidth(c *Column) int {
-	if c.Width == WidthAuto || t.autoSize > 0 {
-		return c.maxLen
+func (t *Table) getWidth(c *columns.Column) int {
+	if c.IsAutoSize() || t.autoSize > 0 {
+		return c.MaxLen
 	}
 	return c.Width
 }
 
 //AddColumn adds a column to the table
-func (t *Table) AddColumn(name string, width int, aling Align) *Table {
-	//TODO: check dublicate
-	t.Columns = append(t.Columns, &Column{
-		Name:  name,
-		Width: width,
-		Aling: aling,
-	})
+func (t *Table) AddColumn(name string, width int, aling columns.Align) *Table {
+	_, err := t.Columns.NewColumn(name, name, width, aling)
+	if err != nil {
+		panic(err)
+	}
 	return t
 }
 
@@ -180,10 +169,11 @@ func (t *Table) CountData() int {
 	return len(t.Data)
 }
 
-//SetBorder - set  type of border table 
+//SetBorder - set  type of border table
 func (t *Table) SetBorder(b Border) {
 	t.border = b
 }
+
 //GetBorder - get current border
 func (t Table) GetBorder() Border {
 	return t.border
@@ -197,25 +187,25 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	}
 	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
-    olddataout := dataout
+	olddataout := dataout
 	for num, c := range t.Columns {
-        
+
 		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKTopToBottom]
 		} else {
-                         
-			delim = Borders[t.border][BKRighttop] //+ "\n"                       
-            if olddataout!=dataout {
-                delim+="\n"
-            }
+
+			delim = Borders[t.border][BKRighttop] //+ "\n"
+			if olddataout != dataout {
+				delim += "\n"
+			}
 		}
 		dataout += delim
 	}
 	dataout += Borders[t.border][BKVerticalBorder]
 	for num, c := range t.Columns {
-		caption := fmt.Sprintf(t.GetMaskFormat(c), c.Name)
+		caption := fmt.Sprintf(t.GetMaskFormat(c), c.Caption)
 		dataout += trimEnds(caption, trimend, t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
@@ -358,11 +348,11 @@ func (t *Table) String() string {
 
 func (t *Table) autoWidth() error {
 	//each column
-	var wa []*Column
+	var wa columns.Columns
 	for i := range t.Columns {
-		if t.Columns[i].Width == WidthAuto || t.autoSize > 0 {
-			t.Columns[i].maxLen = len(t.Columns[i].Name)
-			wa = append(wa, t.Columns[i])
+		if t.Columns[i].IsAutoSize() || t.autoSize > 0 {
+			t.Columns[i].MaxLen = len(t.Columns[i].Caption)
+			wa.Add(t.Columns[i])
 		}
 	}
 	if len(wa) == 0 {
@@ -372,8 +362,8 @@ func (t *Table) autoWidth() error {
 		for i := range wa {
 			curval := fmt.Sprintf("%v", data[wa[i].Name])
 			curlen := len(curval)
-			if curlen > wa[i].maxLen {
-				wa[i].maxLen = curlen
+			if curlen > wa[i].MaxLen {
+				wa[i].MaxLen = curlen
 			}
 		}
 	}
@@ -383,8 +373,8 @@ func (t *Table) autoWidth() error {
 		nowwidths := make([]int, len(t.Columns))
 		allcolswidth := 0
 		for i := range t.Columns {
-			if t.Columns[i].maxLen > t.Columns[i].Width || t.Columns[i].Width == WidthAuto {
-				nowwidths[i] = t.Columns[i].maxLen
+			if t.Columns[i].MaxLen > t.Columns[i].Width || t.Columns[i].IsAutoSize() {
+				nowwidths[i] = t.Columns[i].MaxLen
 			} else {
 				nowwidths[i] = t.Columns[i].Width
 			}
@@ -393,8 +383,8 @@ func (t *Table) autoWidth() error {
 		//todo: allcolswidth - borders
 		twAll := 0
 		for i := range t.Columns {
-			t.Columns[i].maxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))
-			twAll += t.Columns[i].maxLen
+			t.Columns[i].MaxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))
+			twAll += t.Columns[i].MaxLen
 		}
 		i := 0
 		//distrib mod
@@ -405,7 +395,7 @@ func (t *Table) autoWidth() error {
 			if i+1 >= len(t.Columns) {
 				i = 0
 			}
-			t.Columns[i].maxLen = t.Columns[i].maxLen + 1
+			t.Columns[i].MaxLen = t.Columns[i].MaxLen + 1
 
 			twAll = twAll + 1
 			i = i + 1
