@@ -184,6 +184,10 @@ func (t *Table) CountData() int {
 func (t *Table) SetBorder(b Border) {
 	t.border = b
 }
+//GetBorder - get current border
+func (t Table) GetBorder() Border {
+	return t.border
+}
 
 func (t *Table) writeHeader(w io.Writer) (int, error) {
 	var cntwrite int
@@ -193,13 +197,19 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	}
 	dataout += Borders[t.border][BKLeftTop]
 	cntCols := len(t.Columns)
+    olddataout := dataout
 	for num, c := range t.Columns {
+        
 		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKTopToBottom]
 		} else {
-			delim = Borders[t.border][BKRighttop] + "\n"
+                         
+			delim = Borders[t.border][BKRighttop] //+ "\n"                       
+            if olddataout!=dataout {
+                delim+="\n"
+            }
 		}
 		dataout += delim
 	}
@@ -341,7 +351,7 @@ func New(caption string, border Border, datagetter DataGetter) *Table {
 func (t *Table) String() string {
 	var buf bytes.Buffer
 	if _, err := t.WriteTo(&buf); err != nil {
-		return ""
+		panic(err)
 	}
 	return buf.String()
 }

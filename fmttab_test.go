@@ -159,3 +159,32 @@ func TestAutoWidthColumns(t *testing.T) {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)
 	}
 }
+
+
+func TestAutoSize(t *testing.T) {
+    tab := New("Table", BorderThin, nil)
+	tab.AddColumn("Column1", WidthAuto, AlignLeft)
+    tab.AutoSize(false,0)
+	orgNormal    := "Table\n┌──────────┐\n│Column1   │\n├──────────┤\n│1234567890│\n└──────────┘\n"
+    orgAutoSize10 := "Table\n┌───────┐\n│Column1│\n├───────┤\n│12345..│\n└───────┘\n"
+    orgAutoSize16:="Table\n┌─────────────┐\n│Column1      │\n├─────────────┤\n│1234567890   │\n└─────────────┘\n"
+	tab.AppendData(map[string]interface{}{
+		"Column1": "1234567890",
+	})
+	res := tab.String()        
+	if orgNormal != res {
+		t.Errorf("Excepted \n%q, got:\n%q", orgNormal, res)
+	}
+    
+    tab.AutoSize(true,16)
+    res = tab.String()        
+	if orgAutoSize16 != res {
+		t.Errorf("Excepted \n%q, got:\n%q", orgAutoSize16, res)
+	}
+    
+    tab.AutoSize(true,10)
+    res = tab.String()        
+	if orgAutoSize10 != res {
+		t.Errorf("Excepted \n%q, got:\n%q", orgAutoSize10, res)
+	}
+}
