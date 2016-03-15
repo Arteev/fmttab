@@ -187,8 +187,8 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 		dataout += t.caption + "\n"
 	}
 	dataout += Borders[t.border][BKLeftTop]
-    colv := t.Columns.ColumnsVisible();
-    cntCols := tern.Op(colv==nil,0,colv.Len()).(int)
+	colv := t.Columns.ColumnsVisible()
+	cntCols := tern.Op(colv == nil, 0, colv.Len()).(int)
 	olddataout := dataout
 	for num, c := range colv {
 
@@ -228,8 +228,8 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 }
 
 func (t *Table) writeBorderTopButtomData(hr, vbwnCol, vright BorderKind) (data string) {
-    colv := t.Columns.ColumnsVisible();
-	cntCols := tern.Op(colv==nil,0,colv.Len()).(int)
+	colv := t.Columns.ColumnsVisible()
+	cntCols := tern.Op(colv == nil, 0, colv.Len()).(int)
 	empty := true
 	for num, c := range colv {
 		s := strings.Repeat(Borders[t.border][hr], t.getWidth(c))
@@ -267,8 +267,8 @@ func (t *Table) writeBottomBorder(w io.Writer) (int, error) {
 
 func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, error) {
 	var cntwrite int
-	colv := t.Columns.ColumnsVisible();
-	cntCols := tern.Op(colv==nil,0,colv.Len()).(int)
+	colv := t.Columns.ColumnsVisible()
+	cntCols := tern.Op(colv == nil, 0, colv.Len()).(int)
 	if n, err := w.Write([]byte(Borders[t.border][BKVerticalBorder])); err == nil {
 		cntwrite += n
 	} else {
@@ -353,7 +353,7 @@ func (t *Table) String() string {
 func (t *Table) autoWidth() error {
 	//each column
 	var wa columns.Columns
-    colsvisbile := t.Columns.ColumnsVisible()
+	colsvisbile := t.Columns.ColumnsVisible()
 	for i := range colsvisbile {
 		if colsvisbile[i].IsAutoSize() || t.autoSize > 0 {
 			colsvisbile[i].MaxLen = len(colsvisbile[i].Caption)
@@ -415,8 +415,8 @@ func (t *Table) autoWidth() error {
 // int, but it is int64 to match the io.WriterTo interface. Any error
 // encountered during the write is also returned.
 func (t *Table) WriteTo(w io.Writer) (int64, error) {
-    cols := t.Columns.ColumnsVisible()
-	if cols.Len()==0 {
+	cols := t.Columns.ColumnsVisible()
+	if cols.Len() == 0 {
 		return 0, nil
 	}
 	if err := t.autoWidth(); err != nil {
