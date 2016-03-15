@@ -11,6 +11,7 @@ import (
 	"math"
 
 	"github.com/arteev/fmttab/columns"
+	"github.com/arteev/tern"
 )
 
 //A Border of table
@@ -186,9 +187,10 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 		dataout += t.caption + "\n"
 	}
 	dataout += Borders[t.border][BKLeftTop]
-	cntCols := len(t.Columns)
+    colv := t.Columns.ColumnsVisible();
+    cntCols := tern.Op(colv==nil,0,colv.Len()).(int)
 	olddataout := dataout
-	for num, c := range t.Columns {
+	for num, c := range colv {
 
 		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
@@ -204,7 +206,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 		dataout += delim
 	}
 	dataout += Borders[t.border][BKVerticalBorder]
-	for num, c := range t.Columns {
+	for num, c := range colv {
 		caption := fmt.Sprintf(t.GetMaskFormat(c), c.Caption)
 		dataout += trimEnds(caption, trimend, t.getWidth(c))
 		var delim string
@@ -226,9 +228,10 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 }
 
 func (t *Table) writeBorderTopButtomData(hr, vbwnCol, vright BorderKind) (data string) {
-	cntCols := len(t.Columns)
+    colv := t.Columns.ColumnsVisible();
+	cntCols := tern.Op(colv==nil,0,colv.Len()).(int)
 	empty := true
-	for num, c := range t.Columns {
+	for num, c := range colv {
 		s := strings.Repeat(Borders[t.border][hr], t.getWidth(c))
 		if len(s) > 0 {
 			empty = false
@@ -264,13 +267,14 @@ func (t *Table) writeBottomBorder(w io.Writer) (int, error) {
 
 func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, error) {
 	var cntwrite int
-	cntCols := len(t.Columns)
+	colv := t.Columns.ColumnsVisible();
+	cntCols := tern.Op(colv==nil,0,colv.Len()).(int)
 	if n, err := w.Write([]byte(Borders[t.border][BKVerticalBorder])); err == nil {
 		cntwrite += n
 	} else {
 		return -1, err
 	}
-	for num, c := range t.Columns {
+	for num, c := range colv {
 		val, mok := data[c.Name]
 		if !mok || val == nil {
 			val = ""
@@ -349,10 +353,11 @@ func (t *Table) String() string {
 func (t *Table) autoWidth() error {
 	//each column
 	var wa columns.Columns
-	for i := range t.Columns {
-		if t.Columns[i].IsAutoSize() || t.autoSize > 0 {
-			t.Columns[i].MaxLen = len(t.Columns[i].Caption)
-			wa.Add(t.Columns[i])
+    colsvisbile := t.Columns.ColumnsVisible()
+	for i := range colsvisbile {
+		if colsvisbile[i].IsAutoSize() || t.autoSize > 0 {
+			colsvisbile[i].MaxLen = len(colsvisbile[i].Caption)
+			wa.Add(colsvisbile[i])
 		}
 	}
 	if len(wa) == 0 {
@@ -369,22 +374,22 @@ func (t *Table) autoWidth() error {
 	}
 	//autosize table
 	if t.autoSize > 0 {
-		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical])*len(t.Columns) - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
-		nowwidths := make([]int, len(t.Columns))
+		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical])*colsvisbile.Len() - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
+		nowwidths := make([]int, colsvisbile.Len())
 		allcolswidth := 0
-		for i := range t.Columns {
-			if t.Columns[i].MaxLen > t.Columns[i].Width || t.Columns[i].IsAutoSize() {
-				nowwidths[i] = t.Columns[i].MaxLen
+		for i := range colsvisbile {
+			if colsvisbile[i].MaxLen > colsvisbile[i].Width || colsvisbile[i].IsAutoSize() {
+				nowwidths[i] = colsvisbile[i].MaxLen
 			} else {
-				nowwidths[i] = t.Columns[i].Width
+				nowwidths[i] = colsvisbile[i].Width
 			}
 			allcolswidth += nowwidths[i]
 		}
 		//todo: allcolswidth - borders
 		twAll := 0
-		for i := range t.Columns {
-			t.Columns[i].MaxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))
-			twAll += t.Columns[i].MaxLen
+		for i := range colsvisbile {
+			colsvisbile[i].MaxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))
+			twAll += colsvisbile[i].MaxLen
 		}
 		i := 0
 		//distrib mod
@@ -392,10 +397,10 @@ func (t *Table) autoWidth() error {
 			if twAll >= termwidth || twAll <= 0 {
 				break
 			}
-			if i+1 >= len(t.Columns) {
+			if i+1 >= colsvisbile.Len() {
 				i = 0
 			}
-			t.Columns[i].MaxLen = t.Columns[i].MaxLen + 1
+			colsvisbile[i].MaxLen = colsvisbile[i].MaxLen + 1
 
 			twAll = twAll + 1
 			i = i + 1
@@ -410,7 +415,8 @@ func (t *Table) autoWidth() error {
 // int, but it is int64 to match the io.WriterTo interface. Any error
 // encountered during the write is also returned.
 func (t *Table) WriteTo(w io.Writer) (int64, error) {
-	if len(t.Columns) == 0 {
+    cols := t.Columns.ColumnsVisible()
+	if cols.Len()==0 {
 		return 0, nil
 	}
 	if err := t.autoWidth(); err != nil {

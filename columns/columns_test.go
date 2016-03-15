@@ -3,6 +3,32 @@ import (
     "testing"
 )
 
+
+func TestColumnsVisible(t *testing.T) {
+    var columns Columns
+    if cls:=columns.ColumnsVisible();cls.Len()!=0 {
+        t.Errorf("Excepted CountVisible %d, got %d",0,cls.Len())
+    }
+    _,err := columns.NewColumn("Col1","Columns 1",10,AlignLeft)
+    if err!=nil {
+        t.Error(err)
+    }
+    if cls:=columns.ColumnsVisible();cls.Len()!=1 {
+        t.Errorf("Excepted CountVisible %d, got %d",1,cls.Len())
+    }
+    _,err = columns.NewColumn("Col2","Columns 2",10,AlignLeft)
+    if err!=nil {
+        t.Error(err)
+    }
+    if cls:=columns.ColumnsVisible();cls.Len()!=2 {
+        t.Errorf("Excepted CountVisible %d, got %d",2,cls.Len())
+    }
+    columns[0].Visible = false
+    if cls:=columns.ColumnsVisible();cls.Len()!=1 {
+        t.Errorf("Excepted CountVisible %d, got %d",1,cls.Len())
+    }   
+}
+
 func TestColumns(t *testing.T) {
     var columns Columns    
     if columns.Len()!=0 {

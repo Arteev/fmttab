@@ -7,7 +7,7 @@ import (
 const (
 	//WidthAuto auto sizing of width column
 	WidthAuto = 0
-    //AlignLeft align text along the left edge
+	//AlignLeft align text along the left edge
 	AlignLeft = Align(false)
 	//AlignRight align text along the right edge
 	AlignRight = Align(true)
@@ -28,6 +28,7 @@ type Column struct {
 	Name    string
 	Width   int
 	Aling   Align
+	Visible bool
 }
 
 //A Columns array of the columns
@@ -63,6 +64,7 @@ func (c *Columns) NewColumn(name, caption string, width int, aling Align) (*Colu
 		Caption: caption,
 		Width:   width,
 		Aling:   aling,
+		Visible: true,
 	}
 	*c = append(*c, column)
 	return column, nil
@@ -76,5 +78,15 @@ func (c *Columns) Add(col *Column) error {
 		}
 	}
 	*c = append(*c, col)
-    return nil
+	return nil
+}
+
+//ColumnsVisible returns count visible columns 
+func (c *Columns) ColumnsVisible() (res Columns) {
+	for i, col := range *c {
+		if col.Visible {
+			res = append(res,(*c)[i])
+		}
+	}
+	return
 }

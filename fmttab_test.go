@@ -188,3 +188,32 @@ func TestAutoSize(t *testing.T) {
 		t.Errorf("Excepted \n%q, got:\n%q", orgAutoSize10, res)
 	}
 }
+
+
+func TestHideColumn(t *testing.T) {
+    tab := New("Table", BorderThin, nil)
+	tab.AddColumn("Column1", 8, AlignLeft)
+    tab.AddColumn("Column2", 8, AlignLeft)
+    tab.Columns[tab.Columns.Len()-1].Visible = false
+	org := "Table\n┌────────┐\n│Column1 │\n├────────┤\n└────────┘\n"
+	res := tab.String()
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
+	}    
+    data1 := map[string]interface{}{
+		"Column1": "value1",
+		"Column2": "value2",
+	}
+	tab.AppendData(data1)    
+    org2 := "Table\n┌────────┐\n│Column1 │\n├────────┤\n│value1  │\n└────────┘\n"
+    res = tab.String()
+    if org2 != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org2, res)
+	}
+            
+    tab.Columns[0].Visible = false
+    res = tab.String()
+     if "" != res {
+		t.Errorf("Excepted \n%q, got:\n%q", "", res)
+	}
+}
