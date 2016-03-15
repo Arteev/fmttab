@@ -7,4 +7,5 @@ before_install:
   - if ! go get github.com/golang/tools/cmd/cover; then go get golang.org/x/tools/cmd/cover; fi
 script:
 
- - test-cover.sh
+ - ls
+ - ./test-cover.sh
