@@ -18,6 +18,6 @@ func main() {
 			"VALUE": keyval[1],
 		})
 	}
-    tab.Columns[0].Caption = "Environment"
+	tab.Columns[0].Caption = "Environment"
 	tab.WriteTo(os.Stdout)
 }

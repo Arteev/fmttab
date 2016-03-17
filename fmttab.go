@@ -52,8 +52,8 @@ const (
 	BKVerticalBorder
 )
 
-const (
-	trimend = ".."
+var (
+	Trimend = ".."
 )
 
 //Borders predefined border types
@@ -98,12 +98,13 @@ type DataGetter func() (bool, map[string]interface{})
 
 //A Table is the repository for the columns, the data that are used for printing the table
 type Table struct {
-	dataget  DataGetter
-	border   Border
-	caption  string
-	autoSize int
-	Columns  columns.Columns
-	Data     []map[string]interface{}
+	dataget       DataGetter
+	border        Border
+	caption       string
+	autoSize      int
+	Columns       columns.Columns
+	Data          []map[string]interface{}
+	VisibleHeader bool
 }
 
 // A trimEnds supplements the text with special characters by limiting the length of the text column width
@@ -191,34 +192,36 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	cntCols := tern.Op(colv == nil, 0, colv.Len()).(int)
 	olddataout := dataout
 	for num, c := range colv {
-
 		dataout += strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c))
 		var delim string
 		if num < cntCols-1 {
 			delim = Borders[t.border][BKTopToBottom]
 		} else {
-
-			delim = Borders[t.border][BKRighttop] //+ "\n"
+			delim = Borders[t.border][BKRighttop]
 			if olddataout != dataout {
 				delim += "\n"
 			}
 		}
 		dataout += delim
 	}
-	dataout += Borders[t.border][BKVerticalBorder]
-	for num, c := range colv {
-		caption := fmt.Sprintf(t.GetMaskFormat(c), c.Caption)
-		dataout += trimEnds(caption, trimend, t.getWidth(c))
-		var delim string
-		if num < cntCols-1 {
-			delim = Borders[t.border][BKVertical]
-		} else {
-			delim = Borders[t.border][BKVerticalBorder]
+
+	if t.VisibleHeader {
+		dataout += Borders[t.border][BKVerticalBorder]
+		for num, c := range colv {
+			caption := fmt.Sprintf(t.GetMaskFormat(c), c.Caption)
+			dataout += trimEnds(caption, Trimend, t.getWidth(c))
+			var delim string
+			if num < cntCols-1 {
+				delim = Borders[t.border][BKVertical]
+			} else {
+				delim = Borders[t.border][BKVerticalBorder]
+			}
+			dataout += delim
 		}
-		dataout += delim
+		dataout += "\n" + Borders[t.border][BKLeftToRight]
+		dataout += t.writeBorderTopButtomData(BKHorizontal, BKBottomCross, BKRightToLeft)
 	}
-	dataout += "\n" + Borders[t.border][BKLeftToRight]
-	dataout += t.writeBorderTopButtomData(BKHorizontal, BKBottomCross, BKRightToLeft)
+
 	if n, err := w.Write([]byte(dataout)); err == nil {
 		cntwrite += n
 	} else {
@@ -280,7 +283,7 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 			val = ""
 		}
 		caption := fmt.Sprintf(t.GetMaskFormat(c), val)
-		if n, err := w.Write([]byte(trimEnds(caption, trimend, t.getWidth(c)))); err == nil {
+		if n, err := w.Write([]byte(trimEnds(caption, Trimend, t.getWidth(c)))); err == nil {
 			cntwrite += n
 		} else {
 			return -1, err
@@ -334,9 +337,10 @@ func (t *Table) writeData(w io.Writer) (int, error) {
 //New creates a Table object. DataGetter can be nil
 func New(caption string, border Border, datagetter DataGetter) *Table {
 	return &Table{
-		caption: caption,
-		border:  border,
-		dataget: datagetter,
+		caption:       caption,
+		border:        border,
+		dataget:       datagetter,
+		VisibleHeader: true,
 	}
 }
 
@@ -357,6 +361,7 @@ func (t *Table) autoWidth() error {
 	for i := range colsvisbile {
 		if colsvisbile[i].IsAutoSize() || t.autoSize > 0 {
 			colsvisbile[i].MaxLen = len(colsvisbile[i].Caption)
+
 			wa.Add(colsvisbile[i])
 		}
 	}
@@ -366,7 +371,7 @@ func (t *Table) autoWidth() error {
 	for _, data := range t.Data {
 		for i := range wa {
 			curval := fmt.Sprintf("%v", data[wa[i].Name])
-			curlen := len(curval)
+			curlen := utf8.RuneCountInString(curval)
 			if curlen > wa[i].MaxLen {
 				wa[i].MaxLen = curlen
 			}
