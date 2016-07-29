@@ -11,6 +11,7 @@ import (
 	"math"
 
 	"github.com/arteev/fmttab/columns"
+	"github.com/arteev/fmttab/eol"
 	"github.com/arteev/tern"
 )
 
@@ -52,9 +53,8 @@ const (
 	BKVerticalBorder
 )
 
-var (
-	Trimend = ".."
-)
+//Trimend - end of line after trimming
+var Trimend = ".."
 
 //Borders predefined border types
 var Borders = map[Border]map[BorderKind]string{
@@ -126,6 +126,7 @@ func (t *Table) GetMaskFormat(c *columns.Column) string {
 		return "%-" + strconv.Itoa(t.getWidth(c)) + "v"
 	}
 	return "%" + strconv.Itoa(t.getWidth(c)) + "v"
+
 }
 
 //must be calculated before call
@@ -134,6 +135,7 @@ func (t *Table) getWidth(c *columns.Column) int {
 		return c.MaxLen
 	}
 	return c.Width
+
 }
 
 //AddColumn adds a column to the table
@@ -185,7 +187,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 	var cntwrite int
 	dataout := ""
 	if t.caption != "" {
-		dataout += t.caption + "\n"
+		dataout += t.caption + eol.EOL
 	}
 	dataout += Borders[t.border][BKLeftTop]
 	colv := t.Columns.ColumnsVisible()
@@ -199,7 +201,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 		} else {
 			delim = Borders[t.border][BKRighttop]
 			if olddataout != dataout {
-				delim += "\n"
+				delim += eol.EOL
 			}
 		}
 		dataout += delim
@@ -218,7 +220,7 @@ func (t *Table) writeHeader(w io.Writer) (int, error) {
 			}
 			dataout += delim
 		}
-		dataout += "\n" + Borders[t.border][BKLeftToRight]
+		dataout += eol.EOL + Borders[t.border][BKLeftToRight]
 		dataout += t.writeBorderTopButtomData(BKHorizontal, BKBottomCross, BKRightToLeft)
 	}
 
@@ -246,7 +248,7 @@ func (t *Table) writeBorderTopButtomData(hr, vbwnCol, vright BorderKind) (data s
 		} else {
 			delim = Borders[t.border][vright]
 			if !empty {
-				delim += "\n"
+				delim += eol.EOL
 			}
 		}
 		if len(delim) > 0 {
@@ -300,7 +302,7 @@ func (t *Table) writeRecord(data map[string]interface{}, w io.Writer) (int, erro
 			return -1, err
 		}
 	}
-	if n, err := w.Write([]byte("\n")); err == nil {
+	if n, err := w.Write([]byte(eol.EOL)); err == nil {
 		cntwrite += n
 	} else {
 		return -1, err
