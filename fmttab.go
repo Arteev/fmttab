@@ -30,6 +30,9 @@ const (
 	BorderThin = Border(1)
 	//BorderDouble table with a double border
 	BorderDouble = Border(2)
+
+	//BorderDouble table with a simple border
+	BorderSimple = Border(3)
 	//AlignLeft align text along the left edge
 	AlignLeft = columns.AlignLeft
 	//AlignRight align text along the right edge
@@ -60,6 +63,11 @@ var Trimend = ".."
 var Borders = map[Border]map[BorderKind]string{
 	BorderNone: map[BorderKind]string{
 		BKVertical: " ",
+	},
+	BorderSimple: map[BorderKind]string{
+		BKBottomCross: "+",
+		BKHorizontal:  "-",
+		BKVertical:    "|",
 	},
 	BorderThin: map[BorderKind]string{
 		BKLeftTop:          "\u250c",
