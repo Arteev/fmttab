@@ -2,6 +2,7 @@ package fmttab
 
 import (
 	"bytes"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"testing"
@@ -228,4 +229,29 @@ func TestWithoutHeader(t *testing.T) {
 	if org != res {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)
 	}
+}
+
+func makeTable() *Table {
+	tab := New("Table", BorderThin, nil)
+	tab.AddColumn("Column1", 8, AlignLeft)
+	tab.AddColumn("Column2", 16, AlignLeft)
+	for n := 0; n < 100; n++ {
+		tab.AppendData(map[string]interface{}{
+			"Column1": n,
+			"Column2": "data",
+		})
+	}
+	return tab
+}
+
+func BenchmarkWriteTo(b *testing.B) {
+
+	tab := makeTable()
+	for n := 0; n < b.N; n++ {
+		_, err := tab.WriteTo(ioutil.Discard)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+
 }
