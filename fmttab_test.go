@@ -2,10 +2,13 @@ package fmttab
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/arteev/fmttab/eol"
 )
 
 //todo: benchmark
@@ -88,7 +91,7 @@ func TestTrim(t *testing.T) {
 func TestString(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", 8, AlignLeft)
-	org := "Table\n┌────────┐\n│Column1 │\n├────────┤\n└────────┘\n"
+	org := fmt.Sprintf("Table%[1]s┌────────┐%[1]s│Column1 │%[1]s├────────┤%[1]s└────────┘%[1]s", eol.EOL)
 	res := tab.String()
 	if org != res {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)
@@ -119,7 +122,7 @@ func TestString(t *testing.T) {
 func TestNationalChars(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", 16, AlignLeft)
-	org := "Table\n┌────────────────┐\n│Column1         │\n├────────────────┤\n│Русский         │\n└────────────────┘\n"
+	org := fmt.Sprintf("Table%[1]s┌────────────────┐%[1]s│Column1         │%[1]s├────────────────┤%[1]s│Русский         │%[1]s└────────────────┘%[1]s", eol.EOL)
 	tab.AppendData(map[string]interface{}{
 		"Column1": "Русский",
 	})
@@ -151,7 +154,7 @@ func TestData(t *testing.T) {
 func TestAutoWidthColumns(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", WidthAuto, AlignLeft)
-	org := "Table\n┌──────────┐\n│Column1   │\n├──────────┤\n│1234567890│\n└──────────┘\n"
+	org := fmt.Sprintf("Table%[1]s┌──────────┐%[1]s│Column1   │%[1]s├──────────┤%[1]s│1234567890│%[1]s└──────────┘%[1]s", eol.EOL)
 	tab.AppendData(map[string]interface{}{
 		"Column1": "1234567890",
 	})
@@ -165,9 +168,9 @@ func TestAutoSize(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", WidthAuto, AlignLeft)
 	tab.AutoSize(false, 0)
-	orgNormal := "Table\n┌──────────┐\n│Column1   │\n├──────────┤\n│1234567890│\n└──────────┘\n"
-	orgAutoSize10 := "Table\n┌───────┐\n│Column1│\n├───────┤\n│12345..│\n└───────┘\n"
-	orgAutoSize16 := "Table\n┌─────────────┐\n│Column1      │\n├─────────────┤\n│1234567890   │\n└─────────────┘\n"
+	orgNormal := fmt.Sprintf("Table%[1]s┌──────────┐%[1]s│Column1   │%[1]s├──────────┤%[1]s│1234567890│%[1]s└──────────┘%[1]s", eol.EOL)
+	orgAutoSize10 := fmt.Sprintf("Table%[1]s┌───────┐%[1]s│Column1│%[1]s├───────┤%[1]s│12345..│%[1]s└───────┘%[1]s", eol.EOL)
+	orgAutoSize16 := fmt.Sprintf("Table%[1]s┌─────────────┐%[1]s│Column1      │%[1]s├─────────────┤%[1]s│1234567890   │%[1]s└─────────────┘%[1]s", eol.EOL)
 	tab.AppendData(map[string]interface{}{
 		"Column1": "1234567890",
 	})
@@ -194,7 +197,7 @@ func TestHideColumn(t *testing.T) {
 	tab.AddColumn("Column1", 8, AlignLeft)
 	tab.AddColumn("Column2", 8, AlignLeft)
 	tab.Columns[tab.Columns.Len()-1].Visible = false
-	org := "Table\n┌────────┐\n│Column1 │\n├────────┤\n└────────┘\n"
+	org := fmt.Sprintf("Table%[1]s┌────────┐%[1]s│Column1 │%[1]s├────────┤%[1]s└────────┘%[1]s", eol.EOL)
 	res := tab.String()
 	if org != res {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)
@@ -204,7 +207,7 @@ func TestHideColumn(t *testing.T) {
 		"Column2": "value2",
 	}
 	tab.AppendData(data1)
-	org2 := "Table\n┌────────┐\n│Column1 │\n├────────┤\n│value1  │\n└────────┘\n"
+	org2 := fmt.Sprintf("Table%[1]s┌────────┐%[1]s│Column1 │%[1]s├────────┤%[1]s│value1  │%[1]s└────────┘%[1]s", eol.EOL)
 	res = tab.String()
 	if org2 != res {
 		t.Errorf("Excepted \n%q, got:\n%q", org2, res)
@@ -221,7 +224,7 @@ func TestWithoutHeader(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.VisibleHeader = false
 	tab.AddColumn("Column1", WidthAuto, AlignLeft)
-	org := "Table\n┌──────────┐\n│1234567890│\n└──────────┘\n"
+	org := fmt.Sprintf("Table%[1]s┌──────────┐%[1]s│1234567890│%[1]s└──────────┘%[1]s", eol.EOL)
 	tab.AppendData(map[string]interface{}{
 		"Column1": "1234567890",
 	})
