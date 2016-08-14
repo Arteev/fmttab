@@ -41,6 +41,9 @@ func (t Column) IsAutoSize() bool {
 
 //Len returns count columns
 func (c *Columns) Len() int {
+	if c == nil {
+		return 0
+	}
 	return len(*c)
 }
 
@@ -81,11 +84,11 @@ func (c *Columns) Add(col *Column) error {
 	return nil
 }
 
-//ColumnsVisible returns count visible columns 
+//ColumnsVisible returns count visible columns
 func (c *Columns) ColumnsVisible() (res Columns) {
 	for i, col := range *c {
 		if col.Visible {
-			res = append(res,(*c)[i])
+			res = append(res, (*c)[i])
 		}
 	}
 	return
