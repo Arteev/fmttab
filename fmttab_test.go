@@ -10,8 +10,6 @@ import (
 	"github.com/arteev/fmttab/eol"
 )
 
-//todo: benchmark
-
 func TestCallAndOut(t *testing.T) {
 	const name = "<THIS IS NAME>"
 	const val = 123

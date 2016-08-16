@@ -109,26 +109,21 @@ type Table struct {
 
 // A trimEnds supplements the text with special characters by limiting the length of the text column width
 func trimEnds(val, end string, max int) string {
-	l := utf8.RuneCountInString(val)
-	if l <= max {
+	if utf8.RuneCountInString(val) <= max {
 		return val
 	}
-	lend := utf8.RuneCountInString(end)
-	if lend >= max {
-		return end[:max]
+	if lend := utf8.RuneCountInString(end); lend < max {
+		return string([]rune(val)[:(max-lend)]) + end
 	}
-	return string([]rune(val)[:(max-lend)]) + end
+	return end[:max]
 }
 
 //GetMaskFormat returns a pattern string for formatting text in table column alignment
 func (t *Table) GetMaskFormat(c *columns.Column) string {
-	var mask string
 	if c.Aling == AlignLeft {
-		mask = "%-" + strconv.Itoa(t.getWidth(c)) + "v"
-	} else {
-		mask = "%" + strconv.Itoa(t.getWidth(c)) + "v"
+		return "%-" + strconv.Itoa(t.getWidth(c)) + "v"
 	}
-	return mask
+	return "%" + strconv.Itoa(t.getWidth(c)) + "v"
 }
 
 //must be calculated before call

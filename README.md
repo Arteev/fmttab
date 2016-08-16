@@ -52,7 +52,7 @@ Example 2:
     package main
 
     import (
-        "github.com/Arteev/fmttab"
+        "github.com/arteev/fmttab"
         "os"
         "path/filepath"
     )
