@@ -45,10 +45,10 @@ func TestBorderHorizontalMulti(t *testing.T) {
 	
 	org := fmt.Sprintf("Table%[1]s╔═══════╤═══════╤═══════╗%[1]s║Column1│Column2│Column3║%[1]s╟───────┼───────┼───────╢%[1]s║test   │       │       ║ %[1]s╟───────┼───────┼───────╢%[1]s║test2  │       │       ║%[1]s╚═══════╧═══════╧═══════╝%[1]s", eol.EOL)    
 	
-	tab := fmttab.New("Table",fmttab.BorderDouble,nil)
-        tab.AddColumn("Column1",fmttab.WidthAuto,fmttab.AlignLeft)
-		tab.AddColumn("Column2",fmttab.WidthAuto,fmttab.AlignLeft)
-		tab.AddColumn("Column3",fmttab.WidthAuto,fmttab.AlignLeft)
+	tab := New("Table",BorderDouble,nil)
+        tab.AddColumn("Column1",WidthAuto,AlignLeft)
+		tab.AddColumn("Column2",WidthAuto,AlignLeft)
+		tab.AddColumn("Column3",WidthAuto,AlignLeft)
 	tab.CloseEachColumn=true;
 	 tab.AppendData(map[string]interface{} {
             "Column1": "test",
