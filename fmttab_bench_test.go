@@ -11,6 +11,7 @@ func makeTable() *Table {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", 8, AlignLeft)
 	tab.AddColumn("Column2", 16, AlignLeft)
+	tab.CloseEachColumn = true
 	for n := 0; n < 100; n++ {
 		tab.AppendData(map[string]interface{}{
 			"Column1": n * rand.Int(),
