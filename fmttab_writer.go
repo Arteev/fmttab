@@ -116,13 +116,16 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 		} else {
 			return -1, err
 		}
-		var delim string
+		var (
+			n   int
+			err error
+		)
 		if num < cntCols-1 {
-			delim = Borders[t.border][BKVertical]
+			n, err = buf.WriteString(Borders[t.border][BKVertical])
 		} else {
-			delim = Borders[t.border][BKVerticalBorder]
+			n, err = buf.WriteString(Borders[t.border][BKVerticalBorder])
 		}
-		if n, err := buf.WriteString(delim); err == nil {
+		if err == nil {
 			cntwrite += n
 		} else {
 			return -1, err
@@ -136,43 +139,41 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 	return cntwrite, nil
 }
 
-func (t *Table) writeRecordHorBorder(data map[string]interface{}, buf *bufio.Writer) (int, error) {
+func (t *Table) writeRecordHorBorder(buf *bufio.Writer) (int, error) {
 	var cntwrite int
 	colv := t.Columns.ColumnsVisible()
 	cntCols := tern.Op(colv == nil, 0, colv.Len()).(int)
-		
-	if n, err := buf.WriteString(Borders[t.border][BKLeftToRight]+Borders[t.border][BKHorizontal]); err == nil {
-			cntwrite += n
+
+	if n, err := buf.WriteString(Borders[t.border][BKLeftToRight]); err == nil {
+		cntwrite += n
 	} else {
 		return -1, err
 	}
-	
+
 	for num, c := range colv {
-	    val, mok := data[c.Name]
-		if !mok || val == nil {
-			val = ""
-		}	
-		
-		if n, err := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontal],t.getWidth(c)-2));err == nil {
-			cntwrite += n
-	     } else {
-	   	return -1, err
-	    }	
-		
-		var delim string
-		if num < cntCols-1 {
-			delim = Borders[t.border][BKBottomCross]
-		} else {			
-			delim = Borders[t.border][BKHorizontal]+Borders[t.border][BKRightToLeft]		
-		}
-		if n, err := buf.WriteString(delim); err == nil {
+		if n, err := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontal], t.getWidth(c))); err == nil {
 			cntwrite += n
 		} else {
 			return -1, err
-		}			
-		
+		}
+
+		var (
+			n   int
+			err error
+		)
+		if num < cntCols-1 {
+			n, err = buf.WriteString(Borders[t.border][BKBottomCross])
+		} else {
+			n, err = buf.WriteString(Borders[t.border][BKRightToLeft])
+		}
+		if err == nil {
+			cntwrite += n
+		} else {
+			return -1, err
+		}
+
 	}
-	
+
 	if n, err := buf.WriteString(eol.EOL); err == nil {
 		cntwrite += n
 	} else {
@@ -181,40 +182,35 @@ func (t *Table) writeRecordHorBorder(data map[string]interface{}, buf *bufio.Wri
 	return cntwrite, nil
 }
 
-
 func (t *Table) writeData(buf *bufio.Writer) (int, error) {
-	var step int
+	firstrow := true
 	if t.dataget != nil {
 		for {
-			step=0;
 			ok, data := t.dataget()
 			if !ok {
 				break
 			}
-			step=step+1;
-			if (step>1)&&t.CloseEachColumn {						
-			  if _, err := t.writeRecordHorBorder(data, buf); err != nil {
-				return -1, err					
-			    }
-			}		
-			
-			
+			if (!firstrow) && t.CloseEachColumn {
+				if _, err := t.writeRecordHorBorder(buf); err != nil {
+					return -1, err
+				}
+			}
+			firstrow = false
 			if _, err := t.writeRecord(data, buf); err != nil {
 				return -1, err
 			}
 		}
 	} else if t.CountData() != 0 {
-		var ll int =len(t.Data)
 		for ii, data := range t.Data {
 			if _, err := t.writeRecord(data, buf); err != nil {
 				return -1, err
 			}
-			if t.CloseEachColumn {			
-			if ii < ll-1{
-			   if _, err := t.writeRecordHorBorder(data, buf); err != nil {		
-				return -1, err
-			      }		
-			   }
+			if t.CloseEachColumn {
+				if ii < len(t.Data)-1 {
+					if _, err := t.writeRecordHorBorder(buf); err != nil {
+						return -1, err
+					}
+				}
 			}
 		}
 	}
