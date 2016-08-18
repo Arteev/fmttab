@@ -43,7 +43,7 @@ func TestBorderHorizontalOne(t *testing.T) {
 	}
 func TestBorderHorizontalMulti(t *testing.T) {	
 	
-	org := fmt.Sprintf("Table%[1]s╔═══════╤═══════╤═══════╗%[1]s║Column1│Column2│Column3║%[1]s╟───────┼───────┼───────╢%[1]s║test   │       │       ║ %[1]s╟───────┼───────┼───────╢%[1]s║test2  │       │       ║%[1]s╚═══════╧═══════╧═══════╝%[1]s", eol.EOL)    
+	org := fmt.Sprintf("Table%[1]s╔═══════╤═══════╤═══════╗%[1]s║Column1│Column2│Column3║%[1]s╟───────┼───────┼───────╢%[1]s║test   │       │       ║%[1]s╟───────┼───────┼───────╢%[1]s║test2  │       │       ║%[1]s╚═══════╧═══════╧═══════╝%[1]s", eol.EOL)    
 	
 	tab := New("Table",BorderDouble,nil)
         tab.AddColumn("Column1",WidthAuto,AlignLeft)
