@@ -22,6 +22,8 @@ func TestBorderWithout(t *testing.T) {
 	}
 }
 
+
+
 func TestBorderHorizontalOne(t *testing.T) {	
 	
 	org := fmt.Sprintf("Table%[1]s╔═══════╗%[1]s║Column1║%[1]s╟───────╢%[1]s║test   ║%[1]s╚═══════╝%[1]s", eol.EOL)    
@@ -39,6 +41,30 @@ func TestBorderHorizontalOne(t *testing.T) {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)
 	}
 	}
+func TestBorderHorizontalMulti(t *testing.T) {	
+	
+	org := fmt.Sprintf("Table%[1]s╔═══════╤═══════╤═══════╗%[1]s║Column1│Column2│Column3║%[1]s╟───────┼───────┼───────╢%[1]s║test   │       │       ║ %[1]s╟───────┼───────┼───────╢%[1]s║test2  │       │       ║%[1]s╚═══════╧═══════╧═══════╝%[1]s", eol.EOL)    
+	
+	tab := fmttab.New("Table",fmttab.BorderDouble,nil)
+        tab.AddColumn("Column1",fmttab.WidthAuto,fmttab.AlignLeft)
+		tab.AddColumn("Column2",fmttab.WidthAuto,fmttab.AlignLeft)
+		tab.AddColumn("Column3",fmttab.WidthAuto,fmttab.AlignLeft)
+	tab.CloseEachColumn=true;
+	 tab.AppendData(map[string]interface{} {
+            "Column1": "test",
+            
+        })
+		 tab.AppendData(map[string]interface{} {
+            "Column1": "test2",
+            
+        })
+	
+	res := tab.String()
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
+	}
+	}	
+	
 func TestBorderHorizontalTWo(t *testing.T) {		
     org2 := fmt.Sprintf("Table%[1]s╔═══════╗%[1]s║Column1║%[1]s╟───────╢%[1]s║test   ║%[1]s╟───────╢%[1]s║test2  ║%[1]s╚═══════╝%[1]s", eol.EOL)
 	tab := New("Table",BorderDouble,nil)
