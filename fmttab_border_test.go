@@ -2,9 +2,7 @@ package fmttab
 
 import (
 	"testing"
-
 	"fmt"
-
 	"github.com/arteev/fmttab/eol"
 )
 
@@ -22,6 +20,53 @@ func TestBorderWithout(t *testing.T) {
 	if org != res {
 		t.Errorf("Excepted \n%q, got:\n%q", org, res)
 	}
+}
+
+func TestBorderHorizontalOne(t *testing.T) {	
+	
+	org := fmt.Sprintf("Table%[1]s╔═══════╗%[1]s║Column1║%[1]s╟───────╢%[1]s║test   ║%[1]s╚═══════╝%[1]s", eol.EOL)    
+	
+	tab := New("Table",BorderDouble,nil)
+        tab.AddColumn("Column1",WidthAuto,AlignLeft)
+	tab.CloseEachColumn=true;
+		
+	tab.AppendData(map[string]interface{} {
+            "Column1": "test",            
+        })
+	
+	res := tab.String()
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
+	}
+	}
+func TestBorderHorizontalTWo(t *testing.T) {		
+    org2 := fmt.Sprintf("Table%[1]s╔═══════╗%[1]s║Column1║%[1]s╟───────╢%[1]s║test   ║%[1]s╟───────╢%[1]s║test2  ║%[1]s╚═══════╝%[1]s", eol.EOL)
+	tab := New("Table",BorderDouble,nil)
+        tab.AddColumn("Column1",WidthAuto,AlignLeft)
+	tab.CloseEachColumn=true;
+		
+	tab.AppendData(map[string]interface{} {
+            "Column1": "test",            
+        })
+	
+   tab.AppendData(map[string]interface{} {
+            "Column1": "test2",
+            
+        })
+	res2 := tab.String()	
+	if org2 != res2 {
+		t.Errorf("Excepted \n%q, got:\n%q", org2, res2)
+	}	
+	}
+func TestBorderHorizontalWithout(t *testing.T) {	
+	org3 := fmt.Sprintf("Table%[1]s╔═══════╗%[1]s║Column1║%[1]s╟───────╢%[1]s╚═══════╝%[1]s", eol.EOL)
+	tab2 := New("Table",BorderDouble,nil)
+        tab2.AddColumn("Column1",WidthAuto,AlignLeft)
+	tab2.CloseEachColumn=true;
+	res3 := tab2.String()	
+	if org3 != res3 {
+		t.Errorf("Excepted \n%q, got:\n%q", org3, res3)
+	}		
 }
 
 func TestReplaceBorder(t *testing.T) {

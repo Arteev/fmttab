@@ -136,21 +136,85 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 	return cntwrite, nil
 }
 
+func (t *Table) writeRecordHorBorder(data map[string]interface{}, buf *bufio.Writer) (int, error) {
+	var cntwrite int
+	colv := t.Columns.ColumnsVisible()
+	cntCols := tern.Op(colv == nil, 0, colv.Len()).(int)
+		
+	if n, err := buf.WriteString(Borders[t.border][BKLeftToRight]+Borders[t.border][BKHorizontal]); err == nil {
+			cntwrite += n
+	} else {
+		return -1, err
+	}
+	
+	for num, c := range colv {
+	    val, mok := data[c.Name]
+		if !mok || val == nil {
+			val = ""
+		}	
+		
+		if n, err := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontal],t.getWidth(c)-2));err == nil {
+			cntwrite += n
+	     } else {
+	   	return -1, err
+	    }	
+		
+		var delim string
+		if num < cntCols-1 {
+			delim = Borders[t.border][BKBottomCross]
+		} else {			
+			delim = Borders[t.border][BKHorizontal]+Borders[t.border][BKRightToLeft]		
+		}
+		if n, err := buf.WriteString(delim); err == nil {
+			cntwrite += n
+		} else {
+			return -1, err
+		}			
+		
+	}
+	
+	if n, err := buf.WriteString(eol.EOL); err == nil {
+		cntwrite += n
+	} else {
+		return -1, err
+	}
+	return cntwrite, nil
+}
+
+
 func (t *Table) writeData(buf *bufio.Writer) (int, error) {
+	var step int
 	if t.dataget != nil {
 		for {
+			step=0;
 			ok, data := t.dataget()
 			if !ok {
 				break
 			}
+			step=step+1;
+			if (step>1)&&t.CloseEachColumn {						
+			  if _, err := t.writeRecordHorBorder(data, buf); err != nil {
+				return -1, err					
+			    }
+			}		
+			
+			
 			if _, err := t.writeRecord(data, buf); err != nil {
 				return -1, err
 			}
 		}
 	} else if t.CountData() != 0 {
-		for _, data := range t.Data {
+		var ll int =len(t.Data)
+		for ii, data := range t.Data {
 			if _, err := t.writeRecord(data, buf); err != nil {
 				return -1, err
+			}
+			if t.CloseEachColumn {			
+			if ii < ll-1{
+			   if _, err := t.writeRecordHorBorder(data, buf); err != nil {		
+				return -1, err
+			      }		
+			   }
 			}
 		}
 	}

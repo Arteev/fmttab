@@ -102,6 +102,7 @@ type Table struct {
 	border        Border
 	caption       string
 	autoSize      int
+	CloseEachColumn bool
 	Columns       columns.Columns
 	Data          []map[string]interface{}
 	VisibleHeader bool
