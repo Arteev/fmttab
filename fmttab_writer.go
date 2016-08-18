@@ -136,21 +136,88 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 	return cntwrite, nil
 }
 
+func (t *Table) writeRecordHorBorder(data map[string]interface{}, w io.Writer) (int, error) {
+	var cntwrite int
+	cntCols := len(t.Columns)	
+	if n, err := w.Write([]byte(Borders[t.border][BKLeftToRight]+Borders[t.border][BKHorizontal])); err == nil {
+			cntwrite += n
+	} else {
+		return -1, err
+	}
+	
+	for num, c := range t.Columns {
+	    val, mok := data[c.Name]
+		if !mok || val == nil {
+			val = ""
+		}	
+		caption := fmt.Sprintf(t.GetMaskFormat(c), val)		
+	    for  i := 0; i <utf8.RuneCountInString(caption)-1; i++ {		
+		  if n, err := w.Write([]byte(Borders[t.border][BKHorizontal])); err == nil {
+		
+		cntwrite += n
+	} else {
+		return -1, err
+	}
+		}
+		
+		
+		
+		var delim string
+		if num < cntCols-1 {
+			delim = Borders[t.border][BKBottomCross]
+		} else {			
+			delim = Borders[t.border][BKHorizontal]+Borders[t.border][BKRightToLeft]		
+		}
+		if n, err := w.Write([]byte(delim)); err == nil {
+			cntwrite += n
+		} else {
+			return -1, err
+		}			
+		
+	}
+	
+	if n, err := w.Write([]byte("\n")); err == nil {
+		cntwrite += n
+	} else {
+		return -1, err
+	}
+	return cntwrite, nil
+}
+
+
 func (t *Table) writeData(buf *bufio.Writer) (int, error) {
+	var step int
 	if t.dataget != nil {
 		for {
+			step=0;
 			ok, data := t.dataget()
 			if !ok {
 				break
 			}
+			step=step+1;
+			if (step>1)&&t.CloseEachColumn {						
+			  if _, err := t.writeRecordHorBorder(data, buf); err != nil {
+				return -1, err					
+			    }
+			}		
+			
+			
 			if _, err := t.writeRecord(data, buf); err != nil {
 				return -1, err
 			}
 		}
 	} else if t.CountData() != 0 {
-		for _, data := range t.Data {
+		var ll int =len(t.Data)
+		for ii, data := range t.Data {
 			if _, err := t.writeRecord(data, buf); err != nil {
 				return -1, err
+			}
+			if t.CloseEachColumn {			
+			if ii < ll-1{
+			   if _, err := t.writeRecordHorBorder(data, buf); err != nil {		
+				return -1, err
+			      }		
+			   }
 			}
 		}
 	}
