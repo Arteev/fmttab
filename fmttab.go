@@ -50,6 +50,7 @@ const (
 
 //Trimend - end of line after trimming
 var Trimend = ".."
+var trimlen = utf8.RuneCountInString(Trimend)
 
 //Borders predefined border types
 var Borders = map[Border]map[BorderKind]string{
@@ -98,25 +99,28 @@ type DataGetter func() (bool, map[string]interface{})
 
 //A Table is the repository for the columns, the data that are used for printing the table
 type Table struct {
-	dataget       DataGetter
-	border        Border
-	caption       string
-	autoSize      int
+	dataget         DataGetter
+	border          Border
+	caption         string
+	autoSize        int
 	CloseEachColumn bool
-	Columns       columns.Columns
-	Data          []map[string]interface{}
-	VisibleHeader bool
+	Columns         columns.Columns
+	Data            []map[string]interface{}
+	VisibleHeader   bool
+	masks           map[*columns.Column]string
+	columnsvisible  columns.Columns
 }
 
 // A trimEnds supplements the text with special characters by limiting the length of the text column width
-func trimEnds(val, end string, max int) string {
+func trimEnds(val string, max int) string {
 	if utf8.RuneCountInString(val) <= max {
 		return val
 	}
-	if lend := utf8.RuneCountInString(end); lend < max {
-		return string([]rune(val)[:(max-lend)]) + end
+	if trimlen < max {
+		return val[:max-trimlen] + Trimend
+		//return string([]rune(val)[:(max-trimlen)]) + end
 	}
-	return end[:max]
+	return Trimend[:max]
 }
 
 //GetMaskFormat returns a pattern string for formatting text in table column alignment
@@ -140,6 +144,7 @@ func (t *Table) getWidth(c *columns.Column) int {
 func (t *Table) AddColumn(name string, width int, aling columns.Align) *Table {
 	_, err := t.Columns.NewColumn(name, name, width, aling)
 	if err != nil {
+		//fix it
 		panic(err)
 	}
 	return t

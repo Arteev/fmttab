@@ -61,24 +61,23 @@ func TestCallAndOut(t *testing.T) {
 func TestTrim(t *testing.T) {
 	test := map[struct {
 		val string
-		end string
 		max int
 	}]string{
 		{
-			"testing", "...", 6,
-		}: "tes...",
+			"testing", 6,
+		}: "test..",
 		{
-			"testing", "...", 7,
+			"testing", 7,
 		}: "testing",
 		{
-			"testing", "...", 2,
+			"testing", 2,
 		}: "..",
 		{
-			"testing", ">", 5,
-		}: "test>",
+			"testing", 5,
+		}: "tes..",
 	}
 	for key, pair := range test {
-		r := trimEnds(key.val, key.end, key.max)
+		r := trimEnds(key.val, key.max)
 		if r != pair {
 			t.Errorf("Excepted %q, got %q", pair, r)
 		}
