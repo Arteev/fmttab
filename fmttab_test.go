@@ -84,6 +84,29 @@ func TestTrim(t *testing.T) {
 	}
 }
 
+func TestTrimend(t *testing.T) {
+	tab := New("Table", BorderThin, nil)
+	tab.VisibleHeader = false
+	tab.AddColumn("Column1", 5, AlignLeft)
+	org := fmt.Sprintf("Table%[1]s┌─────┐%[1]s│123..│%[1]s└─────┘%[1]s", eol.EOL)
+	tab.AppendData(map[string]interface{}{
+		"Column1": "1234567890",
+	})
+	res := tab.String()
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
+	}
+
+	oldTrimend := Trimend
+	Trimend = ">"
+	org = fmt.Sprintf("Table%[1]s┌─────┐%[1]s│1234>│%[1]s└─────┘%[1]s", eol.EOL)
+	res = tab.String()
+	Trimend = oldTrimend
+	if org != res {
+		t.Errorf("Excepted \n%q, got:\n%q", org, res)
+	}
+}
+
 func TestString(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", 8, AlignLeft)

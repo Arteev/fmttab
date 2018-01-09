@@ -50,7 +50,6 @@ const (
 
 //Trimend - end of line after trimming
 var Trimend = ".."
-var trimlen = utf8.RuneCountInString(Trimend)
 
 //Borders predefined border types
 var Borders = map[Border]map[BorderKind]string{
@@ -116,9 +115,9 @@ func trimEnds(val string, max int) string {
 	if utf8.RuneCountInString(val) <= max {
 		return val
 	}
+	trimlen := utf8.RuneCountInString(Trimend)
 	if trimlen < max {
 		return val[:max-trimlen] + Trimend
-		//return string([]rune(val)[:(max-trimlen)]) + end
 	}
 	return Trimend[:max]
 }
