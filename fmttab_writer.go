@@ -11,7 +11,6 @@ import (
 
 	"github.com/arteev/fmttab/columns"
 	"github.com/arteev/fmttab/eol"
-	"github.com/arteev/tern"
 )
 
 func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
@@ -22,7 +21,8 @@ func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
 	buf.WriteString(Borders[t.border][BKLeftTop])
 
 	cntCols := t.columnsvisible.Len()
-	for num, c := range t.columnsvisible {
+	num := 0
+	t.columnsvisible.Visit(func(c *columns.Column) error {
 		cnw, _ := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontalBorder], t.getWidth(c)))
 		if num < cntCols-1 {
 			buf.WriteString(Borders[t.border][BKTopToBottom])
@@ -32,12 +32,15 @@ func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
 				buf.WriteString(eol.EOL)
 			}
 		}
-	}
+		num++
+		return nil
+	})
+
 	if t.VisibleHeader {
 		buf.WriteString(Borders[t.border][BKVerticalBorder])
-		for num, c := range t.columnsvisible {
-			caption := fmt.Sprintf(t.GetMaskFormat(c), c.Caption)
-			buf.WriteString(trimEnds(caption, t.getWidth(c)))
+		for num, c := range t.columnsvisible.Columns() {
+			caption := fmt.Sprintf(t.GetMaskFormat(&c), c.Caption)
+			buf.WriteString(trimEnds(caption, t.getWidth(&c)))
 			if num < cntCols-1 {
 				buf.WriteString(Borders[t.border][BKVertical])
 			} else {
@@ -56,8 +59,8 @@ func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
 func (t *Table) writeBorderTopButtomData(b *bufio.Writer, hr, vbwnCol, vright BorderKind) error {
 	colv := t.Columns.ColumnsVisible()
 	empty := true
-	for num, c := range colv {
-		cnt, err := b.WriteString(strings.Repeat(Borders[t.border][hr], t.getWidth(c)))
+	for num, c := range colv.Columns() {
+		cnt, err := b.WriteString(strings.Repeat(Borders[t.border][hr], t.getWidth(&c)))
 		if err != nil {
 			return err
 		}
@@ -84,6 +87,7 @@ func (t *Table) writeBorderTopButtomData(b *bufio.Writer, hr, vbwnCol, vright Bo
 		}
 	}
 	return nil
+
 }
 
 func (t *Table) writeBottomBorder(buf *bufio.Writer) (int, error) {
@@ -99,30 +103,31 @@ func (t *Table) writeBottomBorder(buf *bufio.Writer) (int, error) {
 func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int, error) {
 	var cntwrite int
 
-	cntCols := tern.Op(t.columnsvisible == nil, 0, t.columnsvisible.Len()).(int)
+	cntCols := t.columnsvisible.Len()
 	if n, err := buf.WriteString(Borders[t.border][BKVerticalBorder]); err == nil {
 		cntwrite += n
 	} else {
 		return -1, err
 	}
 
-	for num, c := range t.columnsvisible {
+	num := 0
+	err := t.columnsvisible.Visit(func(c *columns.Column) error {
 		val, mok := data[c.Name]
 		if !mok || val == nil {
 			val = ""
 		}
 
-		mask, ok := t.masks[c]
+		mask, ok := t.masks[c.Name]
 		if !ok {
 			mask = t.GetMaskFormat(c)
-			t.masks[c] = mask
+			t.masks[c.Name] = mask
 		}
 
 		caption := fmt.Sprintf(mask, val)
 		if n, err := buf.WriteString(trimEnds(caption, t.getWidth(c))); err == nil {
 			cntwrite += n
 		} else {
-			return -1, err
+			return err
 		}
 		var (
 			n   int
@@ -136,8 +141,14 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 		if err == nil {
 			cntwrite += n
 		} else {
-			return -1, err
+			return err
 		}
+
+		num++
+		return nil
+	})
+	if err != nil {
+		return -1, err
 	}
 	if n, err := buf.WriteString(eol.EOL); err == nil {
 		cntwrite += n
@@ -149,7 +160,7 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 
 func (t *Table) writeRecordHorBorder(buf *bufio.Writer) (int, error) {
 	var cntwrite int
-	cntCols := tern.Op(t.columnsvisible == nil, 0, t.columnsvisible.Len()).(int)
+	cntCols := t.columnsvisible.Len()
 
 	if n, err := buf.WriteString(Borders[t.border][BKLeftToRight]); err == nil {
 		cntwrite += n
@@ -157,8 +168,8 @@ func (t *Table) writeRecordHorBorder(buf *bufio.Writer) (int, error) {
 		return -1, err
 	}
 
-	for num, c := range t.columnsvisible {
-		if n, err := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontal], t.getWidth(c))); err == nil {
+	for num, c := range t.columnsvisible.Columns() {
+		if n, err := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontal], t.getWidth(&c))); err == nil {
 			cntwrite += n
 		} else {
 			return -1, err
@@ -225,57 +236,62 @@ func (t *Table) writeData(buf *bufio.Writer) (int, error) {
 }
 
 func (t *Table) autoWidth() error {
-	//each column
-	var wa columns.Columns
-	colsvisbile := t.columnsvisible
-	for i := range colsvisbile {
-		if colsvisbile[i].IsAutoSize() || t.autoSize > 0 {
-			colsvisbile[i].MaxLen = len(colsvisbile[i].Caption)
+	resized := false
+	t.Columns.Visit(func(c *columns.Column) error {
+		if t.autoSize > 0 || c.IsAutoSize() {
+			c.MaxLen = len(c.Caption)
+			resized = true
 
-			wa.Add(colsvisbile[i])
-		}
-	}
-	if len(wa) == 0 {
-		return nil
-	}
-	for _, data := range t.Data {
-		for i := range wa {
-			curval := fmt.Sprintf("%v", data[wa[i].Name])
-			curlen := utf8.RuneCountInString(curval)
-			if curlen > wa[i].MaxLen {
-				wa[i].MaxLen = curlen
+			//loop on data
+			for _, data := range t.Data {
+				curval := fmt.Sprintf("%v", data[c.Name])
+				curlen := utf8.RuneCountInString(curval)
+				if curlen > c.MaxLen {
+					c.MaxLen = curlen
+				}
 			}
+
 		}
+
+		return nil
+	})
+	if !resized {
+		return nil
 	}
 	//autosize table
 	if t.autoSize > 0 {
-		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical])*colsvisbile.Len() - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
-		nowwidths := make([]int, colsvisbile.Len())
+		termwidth := t.autoSize - utf8.RuneCountInString(Borders[t.border][BKVertical])*t.columnsvisible.Len() - utf8.RuneCountInString(Borders[t.border][BKVerticalBorder])*2
+		nowwidths := make(map[string]int, t.columnsvisible.Len())
 		allcolswidth := 0
-		for i := range colsvisbile {
-			if colsvisbile[i].MaxLen > colsvisbile[i].Width || colsvisbile[i].IsAutoSize() {
-				nowwidths[i] = colsvisbile[i].MaxLen
+
+		t.columnsvisible.Visit(func(c *columns.Column) error {
+			if c.MaxLen > c.Width || c.IsAutoSize() {
+				nowwidths[c.Name] = c.MaxLen
 			} else {
-				nowwidths[i] = colsvisbile[i].Width
+				nowwidths[c.Name] = c.Width
 			}
-			allcolswidth += nowwidths[i]
-		}
-		//todo: allcolswidth - borders
+			allcolswidth += nowwidths[c.Name]
+
+			return nil
+		})
+
 		twAll := 0
-		for i := range colsvisbile {
-			colsvisbile[i].MaxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[i]) / float64(allcolswidth))))
-			twAll += colsvisbile[i].MaxLen
-		}
+		t.columnsvisible.Visit(func(c *columns.Column) error {
+			c.MaxLen = int(math.Trunc(float64(termwidth) * (float64(nowwidths[c.Name]) / float64(allcolswidth))))
+			twAll += c.MaxLen
+			return nil
+		})
+
 		i := 0
 		//distrib mod
 		for {
 			if twAll >= termwidth || twAll <= 0 {
 				break
 			}
-			if i+1 >= colsvisbile.Len() {
+			if i+1 >= t.columnsvisible.Len() {
 				i = 0
 			}
-			colsvisbile[i].MaxLen = colsvisbile[i].MaxLen + 1
+			t.columnsvisible.Get(i).MaxLen = t.columnsvisible.Get(i).MaxLen + 1
 
 			twAll = twAll + 1
 			i = i + 1
@@ -289,7 +305,7 @@ func (t *Table) autoWidth() error {
 // int, but it is int64 to match the io.WriterTo interface. Any error
 // encountered during the write is also returned.
 func (t *Table) WriteTo(w io.Writer) (int64, error) {
-	t.masks = make(map[*columns.Column]string)
+	t.masks = make(map[string]string)
 	t.columnsvisible = t.Columns.ColumnsVisible()
 	buf := bufio.NewWriter(w)
 	if t.columnsvisible.Len() == 0 {
@@ -322,7 +338,7 @@ func (t *Table) WriteTo(w io.Writer) (int64, error) {
 func (t *Table) String() string {
 	var buf bytes.Buffer
 	if _, err := t.WriteTo(&buf); err != nil {
-		panic(err)
+		return ""
 	}
 	return buf.String()
 }

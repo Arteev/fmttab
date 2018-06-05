@@ -106,7 +106,7 @@ type Table struct {
 	Columns         columns.Columns
 	Data            []map[string]interface{}
 	VisibleHeader   bool
-	masks           map[*columns.Column]string
+	masks           map[string]string
 	columnsvisible  columns.Columns
 }
 
@@ -177,6 +177,7 @@ func (t *Table) CountData() int {
 
 //SetBorder - set  type of border table
 func (t *Table) SetBorder(b Border) {
+	//TODO: set custom border
 	t.border = b
 }
 

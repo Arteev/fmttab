@@ -32,7 +32,9 @@ type Column struct {
 }
 
 //A Columns array of the columns
-type Columns []*Column
+type Columns struct {
+	columns []*Column
+}
 
 //IsAutoSize returns auto sizing of width column
 func (t Column) IsAutoSize() bool {
@@ -44,14 +46,14 @@ func (c *Columns) Len() int {
 	if c == nil {
 		return 0
 	}
-	return len(*c)
+	return len(c.columns)
 }
 
 //FindByName returns columns by name if exists or nil
 func (c *Columns) FindByName(name string) *Column {
-	for i := range *c {
-		if (*c)[i].Name == name {
-			return (*c)[i]
+	for i, col := range c.columns {
+		if col.Name == name {
+			return c.columns[i]
 		}
 	}
 	return nil
@@ -69,27 +71,54 @@ func (c *Columns) NewColumn(name, caption string, width int, aling Align) (*Colu
 		Aling:   aling,
 		Visible: true,
 	}
-	*c = append(*c, column)
+	c.columns = append(c.columns, column)
 	return column, nil
 }
 
 //Add append column with check exists
 func (c *Columns) Add(col *Column) error {
-	for i := range *c {
-		if (*c)[i] == col {
+	for i := range c.columns {
+		if c.columns[i] == col {
 			return ErrorAlreadyExists
 		}
 	}
-	*c = append(*c, col)
+	if c.FindByName(col.Name) != nil {
+		return ErrorAlreadyExists
+	}
+
+	c.columns = append(c.columns, col)
 	return nil
 }
 
 //ColumnsVisible returns count visible columns
 func (c *Columns) ColumnsVisible() (res Columns) {
-	for i, col := range *c {
+	for _, col := range c.columns {
 		if col.Visible {
-			res = append(res, (*c)[i])
+			res.columns = append(res.columns, col)
 		}
 	}
 	return
+}
+
+//Columns gets array columns
+func (c *Columns) Columns() []Column {
+	var result []Column
+	for _, col := range c.columns {
+		result = append(result, *col)
+	}
+	return result
+}
+
+func (c *Columns) Get(index int) *Column {
+	return c.columns[index]
+}
+
+func (c *Columns) Visit(f func(c *Column) error) error {
+	for i := range c.columns {
+		err := f(c.columns[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

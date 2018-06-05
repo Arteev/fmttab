@@ -23,7 +23,7 @@ func TestColumnsVisible(t *testing.T) {
 	if cls := columns.ColumnsVisible(); cls.Len() != 2 {
 		t.Errorf("Excepted CountVisible %d, got %d", 2, cls.Len())
 	}
-	columns[0].Visible = false
+	columns.columns[0].Visible = false
 	if cls := columns.ColumnsVisible(); cls.Len() != 1 {
 		t.Errorf("Excepted CountVisible %d, got %d", 1, cls.Len())
 	}
@@ -48,11 +48,11 @@ func TestColumns(t *testing.T) {
 		t.Errorf("Excepted %q, got %q", "Col1", col1.Name)
 	}
 	if col1.IsAutoSize() {
-		t.Errorf("Excepted IsAutoSize=false, got %q", col1.IsAutoSize())
+		t.Errorf("Excepted IsAutoSize=false, got %t", col1.IsAutoSize())
 	}
 	col1.Width = WidthAuto
 	if !col1.IsAutoSize() {
-		t.Errorf("Excepted IsAutoSize=true, got %q", col1.IsAutoSize())
+		t.Errorf("Excepted IsAutoSize=true, got %t", col1.IsAutoSize())
 	}
 
 	if columns.Len() != 1 {
@@ -68,8 +68,8 @@ func TestColumns(t *testing.T) {
 		t.Errorf("Excepted nil,got %v", colnot)
 	}
 
-	if col1 != columns[0] {
-		t.Errorf("Excepted %v,got %v", col1, columns[0])
+	if col1 != columns.columns[0] {
+		t.Errorf("Excepted %v,got %v", col1, columns.columns[0])
 	}
 
 	err = columns.Add(col1)
@@ -85,6 +85,11 @@ func TestColumns(t *testing.T) {
 	}
 
 	_, err = columns.NewColumn("Col2", "", 0, AlignLeft)
+	if err != ErrorAlreadyExists {
+		t.Errorf("Excepted %v, got %v", ErrorAlreadyExists, err)
+	}
+
+	err = columns.Add(&Column{Name: col1.Name})
 	if err != ErrorAlreadyExists {
 		t.Errorf("Excepted %v, got %v", ErrorAlreadyExists, err)
 	}
