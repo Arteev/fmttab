@@ -1,7 +1,6 @@
 package fmttab
 
 import (
-	"strconv"
 	"unicode/utf8"
 
 	"github.com/arteev/fmttab/columns"
@@ -120,23 +119,6 @@ func trimEnds(val string, max int) string {
 		return val[:max-trimlen] + Trimend
 	}
 	return Trimend[:max]
-}
-
-//GetMaskFormat returns a pattern string for formatting text in table column alignment
-func (t *Table) GetMaskFormat(c *columns.Column) string {
-	if c.Aling == AlignLeft {
-		return "%-" + strconv.Itoa(t.getWidth(c)) + "v"
-	}
-	return "%" + strconv.Itoa(t.getWidth(c)) + "v"
-}
-
-//must be calculated before call
-func (t *Table) getWidth(c *columns.Column) int {
-	if c.IsAutoSize() || t.autoSize > 0 {
-		return c.MaxLen
-	}
-	return c.Width
-
 }
 
 //AddColumn adds a column to the table

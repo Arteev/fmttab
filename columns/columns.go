@@ -2,6 +2,7 @@ package columns
 
 import (
 	"errors"
+	"strconv"
 )
 
 const (
@@ -121,4 +122,21 @@ func (c *Columns) Visit(f func(c *Column) error) error {
 		}
 	}
 	return nil
+}
+
+//must be calculated before call
+func (c *Column) GetWidth() int {
+	if /*c.IsAutoSize() || t.autoSize > 0*/ c.Width < c.MaxLen {
+		return c.MaxLen
+	}
+	return c.Width
+
+}
+
+//GetMaskFormat returns a pattern string for formatting text in table column alignment
+func (c *Column) GetMaskFormat() string {
+	if c.Aling == AlignLeft {
+		return "%-" + strconv.Itoa(c.GetWidth()) + "v"
+	}
+	return "%" + strconv.Itoa(c.GetWidth()) + "v"
 }
