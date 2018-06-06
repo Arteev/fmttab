@@ -49,52 +49,38 @@ func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
 		}
 		buf.WriteString(eol.EOL)
 		buf.WriteString(Borders[t.border][BKLeftToRight])
-		if err := t.writeBorderTopButtomData(buf, BKHorizontal, BKBottomCross, BKRightToLeft); err != nil {
+		s := t.getBorderTopButtomData(BKHorizontal, BKBottomCross, BKRightToLeft)
+		if _, err := buf.WriteString(s); err != nil {
 			return 0, err
 		}
 	}
 	return buf.Buffered(), buf.Flush()
 }
 
-func (t *Table) writeBorderTopButtomData(b *bufio.Writer, hr, vbwnCol, vright BorderKind) error {
+func (t *Table) getBorderTopButtomData(hr, vbwnCol, vright BorderKind) string {
+	var result string
 	colv := t.Columns.ColumnsVisible()
-	empty := true
 	for num, c := range colv.Columns() {
-		cnt, err := b.WriteString(strings.Repeat(Borders[t.border][hr], c.GetWidth()))
-		if err != nil {
-			return err
-		}
-		if cnt > 0 {
-			empty = false
-		}
+		strLine := strings.Repeat(Borders[t.border][hr], c.GetWidth())
 		if num < colv.Len()-1 {
-			cnt, err = b.WriteString(Borders[t.border][vbwnCol])
-			if err != nil {
-				return err
-			}
+			strLine += Borders[t.border][vbwnCol]
 		} else {
-			cnt, err = b.WriteString(Borders[t.border][vright])
-			if err != nil {
-				return err
-			}
-			if !empty {
-				ceol, _ := b.WriteString(eol.EOL)
-				cnt += ceol
+			strLine += Borders[t.border][vright]
+			if strLine != "" {
+				strLine += eol.EOL
 			}
 		}
-		if cnt > 0 {
-			empty = false
-		}
+		result += strLine
 	}
-	return nil
-
+	return result
 }
 
 func (t *Table) writeBottomBorder(buf *bufio.Writer) (int, error) {
 	if _, err := buf.WriteString(Borders[t.border][BKLeftBottom]); err != nil {
 		return 0, err
 	}
-	if err := t.writeBorderTopButtomData(buf, BKHorizontalBorder, BKBottomToTop, BKRightBottom); err != nil {
+	s := t.getBorderTopButtomData(BKHorizontalBorder, BKBottomToTop, BKRightBottom)
+	if _, err := buf.WriteString(s); err != nil {
 		return 0, err
 	}
 	return buf.Buffered(), buf.Flush()
@@ -158,50 +144,25 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 	return cntwrite, nil
 }
 
-func (t *Table) writeRecordHorBorder(buf *bufio.Writer) (int, error) {
-	var cntwrite int
-	cntCols := t.columnsvisible.Len()
-
-	if n, err := buf.WriteString(Borders[t.border][BKLeftToRight]); err == nil {
-		cntwrite += n
-	} else {
-		return -1, err
-	}
-
+func (t *Table) getRecordHorBorder() string {
+	var result string
+	count := t.columnsvisible.Len()
+	result += Borders[t.border][BKLeftToRight]
 	for num, c := range t.columnsvisible.Columns() {
-		if n, err := buf.WriteString(strings.Repeat(Borders[t.border][BKHorizontal], c.GetWidth())); err == nil {
-			cntwrite += n
+		strLine := strings.Repeat(Borders[t.border][BKHorizontal], c.GetWidth())
+		if num < count-1 {
+			strLine += Borders[t.border][BKBottomCross]
 		} else {
-			return -1, err
+			strLine += Borders[t.border][BKRightToLeft]
 		}
-
-		var (
-			n   int
-			err error
-		)
-		if num < cntCols-1 {
-			n, err = buf.WriteString(Borders[t.border][BKBottomCross])
-		} else {
-			n, err = buf.WriteString(Borders[t.border][BKRightToLeft])
-		}
-		if err == nil {
-			cntwrite += n
-		} else {
-			return -1, err
-		}
-
+		result += strLine
 	}
-
-	if n, err := buf.WriteString(eol.EOL); err == nil {
-		cntwrite += n
-	} else {
-		return -1, err
-	}
-	return cntwrite, nil
+	return result + eol.EOL
 }
 
 func (t *Table) writeData(buf *bufio.Writer) (int, error) {
 	firstrow := true
+	var recordSeparator string
 	if t.dataget != nil {
 		for {
 			ok, data := t.dataget()
@@ -209,7 +170,10 @@ func (t *Table) writeData(buf *bufio.Writer) (int, error) {
 				break
 			}
 			if (!firstrow) && t.CloseEachColumn {
-				if _, err := t.writeRecordHorBorder(buf); err != nil {
+				if recordSeparator == "" {
+					recordSeparator = t.getRecordHorBorder()
+				}
+				if _, err := buf.WriteString(recordSeparator); err != nil {
 					return -1, err
 				}
 			}
@@ -225,7 +189,10 @@ func (t *Table) writeData(buf *bufio.Writer) (int, error) {
 			}
 			if t.CloseEachColumn {
 				if ii < len(t.Data)-1 {
-					if _, err := t.writeRecordHorBorder(buf); err != nil {
+					if recordSeparator == "" {
+						recordSeparator = t.getRecordHorBorder()
+					}
+					if _, err := buf.WriteString(recordSeparator); err != nil {
 						return -1, err
 					}
 				}
