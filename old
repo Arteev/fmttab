@@ -1,7 +1,0 @@
-goos: linux
-goarch: amd64
-pkg: github.com/arteev/fmttab
-BenchmarkWriteTo-8   	   20000	     89811 ns/op
-BenchmarkString-8    	   20000	     89703 ns/op
-PASS
-ok  	github.com/arteev/fmttab	5.452s
