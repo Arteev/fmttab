@@ -38,15 +38,18 @@ func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
 
 	if t.VisibleHeader {
 		buf.WriteString(Borders[t.border][BKVerticalBorder])
-		for num, c := range t.columnsvisible.Columns() {
+		num := 0
+		t.columnsvisible.Visit(func(c *columns.Column) error {
 			caption := fmt.Sprintf(c.GetMaskFormat(), c.Caption)
 			buf.WriteString(trimEnds(caption, c.GetWidth()))
-			if num < cntCols-1 {
-				buf.WriteString(Borders[t.border][BKVertical])
-			} else {
-				buf.WriteString(Borders[t.border][BKVerticalBorder])
+			bKind := BKVertical
+			if num == cntCols-1 {
+				bKind = BKVerticalBorder
 			}
-		}
+			buf.WriteString(Borders[t.border][bKind])
+			num++
+			return nil
+		})
 		buf.WriteString(eol.EOL)
 		buf.WriteString(Borders[t.border][BKLeftToRight])
 		s := t.getBorderTopButtomData(BKHorizontal, BKBottomCross, BKRightToLeft)
@@ -59,10 +62,11 @@ func (t *Table) writeHeader(buf *bufio.Writer) (int, error) {
 
 func (t *Table) getBorderTopButtomData(hr, vbwnCol, vright BorderKind) string {
 	var result string
-	colv := t.Columns.ColumnsVisible()
-	for num, c := range colv.Columns() {
+	count := t.columnsvisible.Len()
+	num := 0
+	t.columnsvisible.Visit(func(c *columns.Column) error {
 		strLine := strings.Repeat(Borders[t.border][hr], c.GetWidth())
-		if num < colv.Len()-1 {
+		if num < count-1 {
 			strLine += Borders[t.border][vbwnCol]
 		} else {
 			strLine += Borders[t.border][vright]
@@ -71,15 +75,14 @@ func (t *Table) getBorderTopButtomData(hr, vbwnCol, vright BorderKind) string {
 			}
 		}
 		result += strLine
-	}
+		num++
+		return nil
+	})
 	return result
 }
 
 func (t *Table) writeBottomBorder(buf *bufio.Writer) (int, error) {
-	if _, err := buf.WriteString(Borders[t.border][BKLeftBottom]); err != nil {
-		return 0, err
-	}
-	s := t.getBorderTopButtomData(BKHorizontalBorder, BKBottomToTop, BKRightBottom)
+	s := Borders[t.border][BKLeftBottom] + t.getBorderTopButtomData(BKHorizontalBorder, BKBottomToTop, BKRightBottom)
 	if _, err := buf.WriteString(s); err != nil {
 		return 0, err
 	}
@@ -110,15 +113,12 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 		}
 
 		caption := fmt.Sprintf(mask, val)
-		if n, err := buf.WriteString(trimEnds(caption, c.GetWidth())); err == nil {
-			cntwrite += n
-		} else {
+		n, err := buf.WriteString(trimEnds(caption, c.GetWidth()))
+		if err != nil {
 			return err
 		}
-		var (
-			n   int
-			err error
-		)
+		cntwrite += n
+
 		if num < cntCols-1 {
 			n, err = buf.WriteString(Borders[t.border][BKVertical])
 		} else {
@@ -136,11 +136,12 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 	if err != nil {
 		return -1, err
 	}
-	if n, err := buf.WriteString(eol.EOL); err == nil {
-		cntwrite += n
-	} else {
+	n, err := buf.WriteString(eol.EOL)
+	if err != nil {
 		return -1, err
 	}
+	cntwrite += n
+
 	return cntwrite, nil
 }
 
@@ -182,23 +183,28 @@ func (t *Table) writeData(buf *bufio.Writer) (int, error) {
 				return -1, err
 			}
 		}
-	} else if t.CountData() != 0 {
-		for ii, data := range t.Data {
-			if _, err := t.writeRecord(data, buf); err != nil {
-				return -1, err
-			}
-			if t.CloseEachColumn {
-				if ii < len(t.Data)-1 {
-					if recordSeparator == "" {
-						recordSeparator = t.getRecordHorBorder()
-					}
-					if _, err := buf.WriteString(recordSeparator); err != nil {
-						return -1, err
-					}
+		return buf.Buffered(), buf.Flush()
+	}
+
+	if t.CountData() == 0 {
+		return buf.Buffered(), buf.Flush()
+	}
+	for ii, data := range t.Data {
+		if _, err := t.writeRecord(data, buf); err != nil {
+			return -1, err
+		}
+		if t.CloseEachColumn {
+			if ii < len(t.Data)-1 {
+				if recordSeparator == "" {
+					recordSeparator = t.getRecordHorBorder()
+				}
+				if _, err := buf.WriteString(recordSeparator); err != nil {
+					return -1, err
 				}
 			}
 		}
 	}
+
 	return buf.Buffered(), buf.Flush()
 }
 

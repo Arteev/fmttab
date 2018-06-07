@@ -38,8 +38,8 @@ type Columns struct {
 }
 
 //IsAutoSize returns auto sizing of width column
-func (t Column) IsAutoSize() bool {
-	return t.Width == WidthAuto
+func (c Column) IsAutoSize() bool {
+	return c.Width == WidthAuto
 }
 
 //Len returns count columns
@@ -110,10 +110,12 @@ func (c *Columns) Columns() []Column {
 	return result
 }
 
+//Get returns columns by index
 func (c *Columns) Get(index int) *Column {
 	return c.columns[index]
 }
 
+//Visit bypasses the columns
 func (c *Columns) Visit(f func(c *Column) error) error {
 	for i := range c.columns {
 		err := f(c.columns[i])
@@ -124,9 +126,9 @@ func (c *Columns) Visit(f func(c *Column) error) error {
 	return nil
 }
 
-//must be calculated before call
+//GetWidth returns the width of the column or the maximum possible width
 func (c *Column) GetWidth() int {
-	if /*c.IsAutoSize() || t.autoSize > 0*/ c.Width < c.MaxLen {
+	if c.Width < c.MaxLen {
 		return c.MaxLen
 	}
 	return c.Width
