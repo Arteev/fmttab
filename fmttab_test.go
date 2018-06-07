@@ -215,7 +215,7 @@ func TestHideColumn(t *testing.T) {
 	tab := New("Table", BorderThin, nil)
 	tab.AddColumn("Column1", 8, AlignLeft)
 	tab.AddColumn("Column2", 8, AlignLeft)
-	tab.Columns[tab.Columns.Len()-1].Visible = false
+	tab.Columns.Get(tab.Columns.Len() - 1).Visible = false
 	org := fmt.Sprintf("Table%[1]s┌────────┐%[1]s│Column1 │%[1]s├────────┤%[1]s└────────┘%[1]s", eol.EOL)
 	res := tab.String()
 	if org != res {
@@ -232,7 +232,7 @@ func TestHideColumn(t *testing.T) {
 		t.Errorf("Excepted \n%q, got:\n%q", org2, res)
 	}
 
-	tab.Columns[0].Visible = false
+	tab.Columns.Get(0).Visible = false
 	res = tab.String()
 	if "" != res {
 		t.Errorf("Excepted \n%q, got:\n%q", "", res)

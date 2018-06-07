@@ -2,6 +2,7 @@ package columns
 
 import (
 	"errors"
+	"strconv"
 )
 
 const (
@@ -32,11 +33,13 @@ type Column struct {
 }
 
 //A Columns array of the columns
-type Columns []*Column
+type Columns struct {
+	columns []*Column
+}
 
 //IsAutoSize returns auto sizing of width column
-func (t Column) IsAutoSize() bool {
-	return t.Width == WidthAuto
+func (c Column) IsAutoSize() bool {
+	return c.Width == WidthAuto
 }
 
 //Len returns count columns
@@ -44,14 +47,14 @@ func (c *Columns) Len() int {
 	if c == nil {
 		return 0
 	}
-	return len(*c)
+	return len(c.columns)
 }
 
 //FindByName returns columns by name if exists or nil
 func (c *Columns) FindByName(name string) *Column {
-	for i := range *c {
-		if (*c)[i].Name == name {
-			return (*c)[i]
+	for i, col := range c.columns {
+		if col.Name == name {
+			return c.columns[i]
 		}
 	}
 	return nil
@@ -69,27 +72,73 @@ func (c *Columns) NewColumn(name, caption string, width int, aling Align) (*Colu
 		Aling:   aling,
 		Visible: true,
 	}
-	*c = append(*c, column)
+	c.columns = append(c.columns, column)
 	return column, nil
 }
 
 //Add append column with check exists
 func (c *Columns) Add(col *Column) error {
-	for i := range *c {
-		if (*c)[i] == col {
+	for i := range c.columns {
+		if c.columns[i] == col {
 			return ErrorAlreadyExists
 		}
 	}
-	*c = append(*c, col)
+	if c.FindByName(col.Name) != nil {
+		return ErrorAlreadyExists
+	}
+
+	c.columns = append(c.columns, col)
 	return nil
 }
 
 //ColumnsVisible returns count visible columns
 func (c *Columns) ColumnsVisible() (res Columns) {
-	for i, col := range *c {
+	for _, col := range c.columns {
 		if col.Visible {
-			res = append(res, (*c)[i])
+			res.columns = append(res.columns, col)
 		}
 	}
 	return
+}
+
+//Columns gets array columns
+func (c *Columns) Columns() []Column {
+	var result []Column
+	for _, col := range c.columns {
+		result = append(result, *col)
+	}
+	return result
+}
+
+//Get returns columns by index
+func (c *Columns) Get(index int) *Column {
+	return c.columns[index]
+}
+
+//Visit bypasses the columns
+func (c *Columns) Visit(f func(c *Column) error) error {
+	for i := range c.columns {
+		err := f(c.columns[i])
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+//GetWidth returns the width of the column or the maximum possible width
+func (c *Column) GetWidth() int {
+	if c.Width < c.MaxLen {
+		return c.MaxLen
+	}
+	return c.Width
+
+}
+
+//GetMaskFormat returns a pattern string for formatting text in table column alignment
+func (c *Column) GetMaskFormat() string {
+	if c.Aling == AlignLeft {
+		return "%-" + strconv.Itoa(c.GetWidth()) + "v"
+	}
+	return "%" + strconv.Itoa(c.GetWidth()) + "v"
 }

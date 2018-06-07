@@ -1,7 +1,6 @@
 package fmttab
 
 import (
-	"strconv"
 	"unicode/utf8"
 
 	"github.com/arteev/fmttab/columns"
@@ -106,7 +105,7 @@ type Table struct {
 	Columns         columns.Columns
 	Data            []map[string]interface{}
 	VisibleHeader   bool
-	masks           map[*columns.Column]string
+	masks           map[string]string
 	columnsvisible  columns.Columns
 }
 
@@ -120,23 +119,6 @@ func trimEnds(val string, max int) string {
 		return val[:max-trimlen] + Trimend
 	}
 	return Trimend[:max]
-}
-
-//GetMaskFormat returns a pattern string for formatting text in table column alignment
-func (t *Table) GetMaskFormat(c *columns.Column) string {
-	if c.Aling == AlignLeft {
-		return "%-" + strconv.Itoa(t.getWidth(c)) + "v"
-	}
-	return "%" + strconv.Itoa(t.getWidth(c)) + "v"
-}
-
-//must be calculated before call
-func (t *Table) getWidth(c *columns.Column) int {
-	if c.IsAutoSize() || t.autoSize > 0 {
-		return c.MaxLen
-	}
-	return c.Width
-
 }
 
 //AddColumn adds a column to the table
@@ -177,6 +159,7 @@ func (t *Table) CountData() int {
 
 //SetBorder - set  type of border table
 func (t *Table) SetBorder(b Border) {
+	//TODO: set custom border
 	t.border = b
 }
 

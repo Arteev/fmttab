@@ -1,27 +1,29 @@
 package main
+
 import (
 	"os"
+
 	"github.com/arteev/fmttab"
 )
 
 func main() {
-	BORDER_MY := fmttab.Border(100)
-	fmttab.Borders[BORDER_MY] = map[fmttab.BorderKind]string{
+	borderMy := fmttab.Border(100)
+	fmttab.Borders[borderMy] = map[fmttab.BorderKind]string{
 
-		fmttab.BKVertical: "|",
-		fmttab.BKHorizontal : "-",
-		fmttab.BKHorizontalBorder : "_",
+		fmttab.BKVertical:         "|",
+		fmttab.BKHorizontal:       "-",
+		fmttab.BKHorizontalBorder: "_",
 	}
-	tab := fmttab.New("Custom table:",BORDER_MY,nil)
-	tab.AddColumn("Key",15,fmttab.AlignLeft).
-		AddColumn("Value",15,fmttab.AlignRight)
+	tab := fmttab.New("Custom table:", borderMy, nil)
+	tab.AddColumn("Key", 15, fmttab.AlignLeft).
+		AddColumn("Value", 15, fmttab.AlignRight)
 	tab.Data = []map[string]interface{}{
 		{
-			"Key":"Key One",
+			"Key":   "Key One",
 			"Value": "Value One",
 		},
 		{
-			"Key":"Key Two",
+			"Key":   "Key Two",
 			"Value": "Value Two",
 		},
 	}
