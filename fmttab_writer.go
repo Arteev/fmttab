@@ -147,17 +147,19 @@ func (t *Table) writeRecord(data map[string]interface{}, buf *bufio.Writer) (int
 
 func (t *Table) getRecordHorBorder() string {
 	var result string
+	num := 0
 	count := t.columnsvisible.Len()
 	result += Borders[t.border][BKLeftToRight]
-	for num, c := range t.columnsvisible.Columns() {
+	t.columnsvisible.Visit(func(c *columns.Column) error {
 		strLine := strings.Repeat(Borders[t.border][BKHorizontal], c.GetWidth())
 		if num < count-1 {
-			strLine += Borders[t.border][BKBottomCross]
+			result += strLine + Borders[t.border][BKBottomCross]
 		} else {
-			strLine += Borders[t.border][BKRightToLeft]
+			result += strLine + Borders[t.border][BKRightToLeft]
 		}
-		result += strLine
-	}
+		num++
+		return nil
+	})
 	return result + eol.EOL
 }
 
